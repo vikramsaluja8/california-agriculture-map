@@ -854,3 +854,60 @@ wrong type or means the wrong thing, and fails somewhere far from the cause.
 | Napa / Sonoma wine country | Napa, Sonoma (3 districts) | 8 |
 
 Roughly 131,000 processing units of a 400,000/month allowance.
+
+## Rebalancing coverage
+
+The sample had grown lopsided. Sacramento Valley was half the entire map, most of it
+north of Yuba City, while wine country — the region with field visits scheduled and the
+growers whose feedback shaped the diversification layer — was 4%.
+
+| | Before | After |
+|---|---|---|
+| North of Yuba City | 1,003 (24%) | **172 (5%)** |
+| Wine country | 166 (4%) | **491 (15%)** |
+
+Region shares are now 15–27% across all five, against 4–50% before.
+
+| Region | Fields | Share |
+|---|---|---|
+| Tulare Lake Basin | 890 | 27% |
+| Sacramento Valley | 873 | 26% |
+| San Joaquin Valley | 564 | 17% |
+| Napa / Sonoma wine country | 491 | 15% |
+| Salinas Valley | 489 | 15% |
+
+### How
+
+Three new controls in step 3c, all reusable:
+
+- `--max-crops N` — sample only the N largest crops in a group. Northern counties were
+  carrying 12 crops each at full sample; now 3–4.
+- `--max-lat` / `--min-lat` — a latitude window. Sutter straddles Yuba City, so it is
+  cut at 39.14 rather than dropped.
+- `DISTRICT_SET_MAX_LAT` — wine country stops at Cloverdale (38.81 N). North of there
+  is Mendocino's growing area: a different appellation system and a different
+  conversation.
+
+**The rice fallowing finding is preserved.** Colusa and Glenn keep 20–25 rice fields
+each, enough to hold the 2022 result, while their non-rice crops were cut hard. The
+reduction is in breadth, not in the evidence.
+
+**Cutting back cost nothing.** The smaller northern samples are subsets of fields
+already cached, so those runs spent **0 PU**. Only wine country's expansion cost
+anything: 2,989 PU.
+
+### Napa now runs the full valley
+
+The old district was centred to cover Napa city to St. Helena and stopped about 5 km
+short of Calistoga. It now runs the whole floor — Napa, Yountville, Oakville,
+Rutherford, St. Helena, Calistoga — on a 22 km radius.
+
+| District | Fields |
+|---|---|
+| Napa Valley (Napa–Calistoga) | 198 |
+| Healdsburg (Dry Creek / Alexander) | 163 |
+| Sonoma Valley | 130 |
+
+Sample latitude runs 38.242 to 38.725, entirely south of Cloverdale.
+
+**3,307 fields · 17 counties · 5 regions · ~134,000 PU spent.**

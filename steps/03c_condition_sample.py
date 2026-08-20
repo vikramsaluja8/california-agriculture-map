@@ -56,11 +56,17 @@ NON_CROP = {"X", "I", "I1", "I2", "I4", "I5", "I6", "YP", "S", "U", "Z", "E", "N
 # recognise. (lat, lon, radius_km)
 DISTRICT_SETS = {
     "wine": {
-        "Napa Valley (Napa–St. Helena)":      (38.400, -122.380, 15),
-        "Healdsburg (Dry Creek / Alexander)": (38.620, -122.870, 12),
-        "Sonoma Valley":                      (38.340, -122.490, 10),
+        # Napa floor now runs the full length, Napa city up to Calistoga (38.578 N),
+        # which the earlier 15 km radius stopped ~5 km short of.
+        "Napa Valley (Napa–Calistoga)":       (38.440, -122.430, 22),
+        "Healdsburg (Dry Creek / Alexander)": (38.620, -122.870, 13),
+        "Sonoma Valley":                      (38.340, -122.490, 11),
     },
 }
+
+# Wine country stops at Cloverdale. North of there is Mendocino's growing area, a
+# different appellation system and a different conversation.
+DISTRICT_SET_MAX_LAT = {"wine": 38.81}
 
 EARTH_KM = 111.32
 
@@ -148,7 +154,8 @@ def cycles_per_year(series: pd.DataFrame) -> pd.DataFrame:
 
 
 def pick(fields: gpd.GeoDataFrame, per_crop: int, seed: int,
-         min_acres: float, max_acres: float, min_acres_group: float) -> gpd.GeoDataFrame:
+         min_acres: float, max_acres: float, min_acres_group: float,
+         max_crops: int | None = None) -> gpd.GeoDataFrame:
     sized = fields[(fields["acres"] >= min_acres) & (fields["acres"] <= max_acres)].copy()
     sized = sized[~sized["code_2023"].isin(NON_CROP)]
 
@@ -163,9 +170,13 @@ def pick(fields: gpd.GeoDataFrame, per_crop: int, seed: int,
             print(f"\n  {district}  ({len(block):,} fields available)")
         by_crop = (block.groupby(["code_2023", "crop_2023"])["acres"]
                    .sum().sort_values(ascending=False))
+        kept = 0
         for (code, name), acres in by_crop.items():
             if acres < min_acres_group:
                 continue
+            if max_crops is not None and kept >= max_crops:
+                break
+            kept += 1
             sel = block[block["code_2023"] == code]
             take = sel.sample(min(len(sel), per_crop), random_state=seed).copy()
             take["cohort"] = name
@@ -238,6 +249,12 @@ def main() -> None:
     ap.add_argument("--interval", default="P1M",
                     help="time resolution, e.g. P1M or P10D. Cost barely changes; "
                          "P10D is needed to resolve multi-crop rotations.")
+    ap.add_argument("--max-crops", type=int, default=None,
+                    help="sample only the N largest crops by acreage in the group")
+    ap.add_argument("--max-lat", type=float, default=None,
+                    help="drop fields north of this latitude")
+    ap.add_argument("--min-lat", type=float, default=None,
+                    help="drop fields south of this latitude")
     ap.add_argument("--min-group-acres", type=float, default=None,
                     help="acreage a crop needs within its group to be sampled")
     args = ap.parse_args()
@@ -247,6 +264,21 @@ def main() -> None:
         sys.exit(f"missing {path} — run steps/02_crop_transitions.py --county {args.county}")
     fields = gpd.read_file(path)
     print(f"{len(fields):,} matched fields in {args.county}")
+
+    # Latitude window. Used to rebalance coverage: the Sacramento Valley sample was
+    # half the entire map, most of it north of Yuba City, while wine country was 4%.
+    lat_lo = args.min_lat if args.min_lat is not None else -90.0
+    lat_hi = args.max_lat if args.max_lat is not None else 90.0
+    if args.cluster in DISTRICT_SET_MAX_LAT:
+        lat_hi = min(lat_hi, DISTRICT_SET_MAX_LAT[args.cluster])
+    if lat_lo > -90.0 or lat_hi < 90.0:
+        pts = fields.to_crs("EPSG:4326").geometry.representative_point()
+        before = len(fields)
+        fields = fields[(pts.y >= lat_lo) & (pts.y <= lat_hi)]
+        print(f"  latitude {lat_lo:.2f}–{lat_hi:.2f}: kept {len(fields):,} of {before:,}")
+        if fields.empty:
+            print("  nothing left after the latitude filter")
+            return
 
     if args.cluster:
         districts = DISTRICT_SETS[args.cluster]
@@ -262,7 +294,8 @@ def main() -> None:
     if floor is None:
         floor = 400.0 if args.cluster else MIN_COUNTY_ACRES
     print("\nsampling:")
-    sample = pick(fields, args.per_crop, args.seed, args.min_acres, args.max_acres, floor)
+    sample = pick(fields, args.per_crop, args.seed, args.min_acres, args.max_acres,
+                  floor, args.max_crops)
 
     client = PlanetStats()
     print(f"\nfetching {len(sample)} field series…")

@@ -1,0 +1,41 @@
+# ── SECRETS ── never commit. Your Planet OAuth secret and API key live here.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ── Python ──
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# ── Data ── all of this is regenerable, and far too large for git.
+#
+# data/raw      (382 MB) DWR geodatabases. steps/01 re-downloads them.
+# data/cache    (249 MB) Planet API responses. NOT in git, but do NOT delete —
+#               this is ~115,000 processing units of paid work. Back it up
+#               separately; losing it means paying for it again.
+# data/processed(201 MB) derived tables, rebuilt from cache for free.
+data/raw/
+data/cache/
+data/interim/
+data/processed/
+
+# ── Build output ──
+# The published site lives in docs/ and IS committed — GitHub Pages serves it.
+# The standalone bundle is not: it is ~9 MB and changes on every rebuild, so
+# committing it would bloat the repo history fast. Attach it to a GitHub
+# Release when you want people to download it.
+docs/farms-on-the-move.html
+
+# Superseded first-pass scaffolding. Kept locally for reference, not part of the
+# project as delivered.
+reference/
+
+# ── macOS ──
+.DS_Store

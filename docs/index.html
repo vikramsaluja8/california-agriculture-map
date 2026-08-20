@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Farms on the Move — Fresno County</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root{
+    --ink:#1b1a17; --muted:#6f6a5e; --panel:#faf8f4; --line:#dcd7cc; --accent:#2f6f8f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font:14.5px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:var(--ink)}
+  #app{display:flex;height:100%}
+  #map{flex:1;min-width:0;background:#eceae4}
+  .leaflet-container{font:inherit}
+  .leaflet-control-zoom a{border-radius:6px!important;color:var(--ink)!important;
+    border-color:var(--line)!important}
+  .leaflet-control-layers,.leaflet-bar{border:1px solid var(--line)!important;
+    border-radius:8px!important;box-shadow:0 1px 6px rgba(0,0,0,.10)!important}
+  .leaflet-tooltip{border:1px solid var(--line);border-radius:6px;
+    box-shadow:0 1px 5px rgba(0,0,0,.10);font-size:12px;padding:4px 8px}
+  #panel{box-shadow:-1px 0 0 rgba(0,0,0,.03)}
+  #panel{width:370px;flex:none;background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;padding:18px 20px 40px}
+
+  h1{font-size:19px;margin:0 0 3px;letter-spacing:-.015em}
+  .sub{color:var(--muted);font-size:12.5px;margin:0 0 16px}
+  h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:20px 0 7px;font-weight:600}
+
+  .seg{display:flex;gap:4px}
+  .seg button{flex:1;padding:7px 4px;font:inherit;font-size:12.5px;border:1px solid var(--line);background:#fff;border-radius:6px;cursor:pointer;color:var(--muted)}
+  .seg button.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+  .seg button .acr{display:block;font-size:9.5px;letter-spacing:.09em;opacity:.62;
+                   font-weight:600;margin-top:1px}
+  .seg button:hover:not(.on){background:#f0ece4}
+  .hint{font-size:12px;color:var(--muted);margin:7px 0 0}
+
+  select{width:100%;padding:7px 9px;font:inherit;font-size:13px;border:1px solid var(--line);border-radius:6px;background:#fff;color:inherit}
+
+  .sliderrow{display:flex;align-items:center;gap:9px;margin-top:8px}
+  .sliderrow input[type=range]{flex:1;accent-color:var(--accent)}
+  .yr{font-variant-numeric:tabular-nums;font-weight:600;min-width:38px;text-align:right}
+  .play{width:30px;height:30px;flex:none;border:1px solid var(--line);background:#fff;border-radius:6px;cursor:pointer;font-size:12px}
+  .play:hover{background:#f0ece4}
+
+  .ramp{height:11px;border-radius:3px;margin:9px 0 4px;border:1px solid rgba(0,0,0,.12)}
+  .ramplabels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+
+  #readout .big{font-size:16px;font-weight:600;letter-spacing:-.01em;margin-bottom:2px}
+  #readout table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12.5px}
+  #readout td{padding:2px 0;vertical-align:top}
+  #readout td:first-child{color:var(--muted);padding-right:10px;white-space:nowrap;width:42%}
+  .empty{color:#8f887a;font-style:italic;font-size:13px}
+  .worst{margin-top:11px;padding:8px 10px;background:#fdf6ec;border:1px solid #e6d7bd;
+         border-radius:7px;font-size:12px;line-height:1.5;color:#6b5530}
+  .worst strong{font-size:14px;color:#8a5a20}
+  .worstlink{display:block;opacity:.75;margin-top:2px}
+  .bench{margin-top:11px;padding:9px 10px;background:#fff;border:1px solid var(--line);
+         border-radius:7px}
+  .benchbar{position:relative;height:6px;border-radius:3px;
+    background:linear-gradient(to right,#8c6b3d,#d6cca8,#71a044)}
+  .benchbar span{position:absolute;top:-3px;width:3px;height:12px;background:var(--ink);
+    border-radius:2px;transform:translateX(-1.5px)}
+  .benchtext{font-size:11.5px;color:var(--muted);margin-top:7px;line-height:1.45}
+  .benchtext strong{font-size:13px}
+  .benchtext strong.good{color:#3f7a2e}
+  .benchtext strong.poor{color:#96613a}
+  .benchtext strong.mid{color:var(--ink)}
+  .dsec, .dsub{border-top:1px solid var(--line)}
+  .dsec:first-of-type{margin-top:16px}
+  .dsec > summary, .dsub > summary{
+    cursor:pointer;list-style:none;display:flex;justify-content:space-between;
+    align-items:center;gap:8px;padding:9px 0;font-size:12.5px;font-weight:600}
+  .dsec > summary{font-size:11px;text-transform:uppercase;letter-spacing:.07em;
+    color:var(--muted)}
+  .dsub > summary{font-weight:500;color:var(--ink);padding:7px 0 7px 2px}
+  summary::-webkit-details-marker{display:none}
+  .dsec > summary::before, .dsub > summary::before{
+    content:'';width:0;height:0;flex:none;margin-right:2px;
+    border-left:4px solid currentColor;border-top:3.5px solid transparent;
+    border-bottom:3.5px solid transparent;transition:transform .12s;opacity:.55}
+  details[open] > summary::before{transform:rotate(90deg)}
+  .dcount{margin-left:auto;font-weight:400;font-size:11px;color:var(--muted);
+    background:#efece5;border-radius:9px;padding:1px 7px;min-width:20px;text-align:center}
+  .dbody{padding:0 0 10px 10px}
+  .dsub{border-top:1px dotted var(--line)}
+  .dnote{font-size:11.5px;color:var(--muted);margin:0 0 6px;line-height:1.45}
+  .drow{display:flex;align-items:baseline;gap:8px;padding:2.5px 0;font-size:12.5px}
+  .dname{flex:1;min-width:0}
+  .dnum{white-space:nowrap;color:var(--muted);text-align:right;min-width:52px}
+  .trend{font-variant-numeric:tabular-nums}
+  .trend.up{color:#3f7a2e;font-weight:600}
+  .trend.down{color:#96613a}
+  .chip{margin-top:11px}
+  .chip img{width:100%;display:block;border-radius:7px;border:1px solid var(--line);
+            background:#ddd8cf;transition:opacity .12s}
+  .chipcap{font-size:11px;color:var(--muted);margin-top:3px;text-align:center}
+  .spark{margin-top:9px}
+  .sparkhead{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:2px}
+  .caveat{margin-top:22px;padding-top:13px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted)}
+  .caveat li{margin-bottom:7px}
+  .caveat ul{padding-left:16px;margin:6px 0 0}
+
+  @media (max-width:780px){
+    #app{flex-direction:column}
+    #map{height:52%}
+    #panel{width:auto;height:48%;border-left:none;border-top:1px solid var(--line)}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="map"></div>
+  <aside id="panel">
+    <h1 id="title">Farms on the Move</h1>
+    <p class="sub" id="subtitle">Loading…</p>
+
+    <h2>View</h2>
+    <div class="seg" id="viewSeg">
+      <button data-view="areas">Whole area</button>
+      <button data-view="fields" class="on">Individual farms</button>
+    </div>
+    <p class="hint" id="viewHelp"></p>
+
+    <h2>What to show</h2>
+    <div class="seg" id="indexSeg"></div>
+    <p class="hint" id="indexHelp"></p>
+
+    <h2>How to show it</h2>
+    <div class="seg" id="modeSeg">
+      <button data-mode="year" class="on">Condition by year</button>
+      <button data-mode="trend">Change since 2017</button>
+    </div>
+
+    <div id="yearBlock">
+      <div class="sliderrow">
+        <button class="play" id="play" title="Play through the years">▶</button>
+        <input type="range" id="yearSlider">
+        <span class="yr" id="yearLabel"></span>
+      </div>
+    </div>
+
+    <div class="ramp" id="ramp"></div>
+    <div class="ramplabels"><span id="rampLo"></span><span id="rampHi"></span></div>
+
+    <div id="cohortBlock">
+      <h2>Filter</h2>
+      <select id="countyFilter"><option value="all">All counties</option></select>
+      <select id="cohortFilter" style="margin-top:6px"><option value="all">All cohorts</option></select>
+    </div>
+
+    <h2>Selected field</h2>
+    <div id="readout"><span class="empty">Tap a field on the map.</span></div>
+
+    <div class="caveat">
+      <strong>Read this before using the map</strong>
+      <ul id="caveats"></ul>
+      <p id="method"></p>
+    </div>
+  </aside>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// Above this zoom parcels are big enough to read on their own, so they get a thin
+// white outline for definition. Below it they keep a heavier same-colour stroke so
+// they stay visible. Either way the geometry drawn is the real field boundary.
+const PARCEL_DETAIL_ZOOM = 12;
+
+const RAMPS = {
+  // Brown through tan to green. Brown is what the low end physically IS — bare soil,
+  // dead canopy, removed orchard — so the colour states a fact rather than a verdict.
+  // Red would read as an alarm the data does not always earn.
+  good_bad: ['#4a3319','#6b4a26','#8c6b3d','#a98d5e','#c3ae83','#d6cca8',
+             '#bccb87','#98b862','#71a044','#4a882c','#256b1a'],
+  // Dry earth to open water. Deliberately neutral: standing water is information
+  // (flood irrigation, a rice check, ponding), not good or bad.
+  dry_wet:  ['#8c6d3f','#b09763','#d3c49a','#e9e6d4','#b8d4dc','#7fb3c4',
+             '#4a90a4','#2b6d84'],
+  // Diverging, for trends. Browning off on the left, greening up on the right,
+  // with a near-neutral middle so "no change" does not read as either.
+  trend:    ['#4a3319','#6b4a26','#8c6b3d','#b09367','#d3c3a0','#efece2',
+             '#cfe0b8','#a3c983','#75ad55','#4a8f33','#256b1a'],
+};
+
+let map, layer, meta, series = {}, features = [], selected = null;
+let areas = [], areaSeries = {};
+let chips = {}, chipData = null, selectedFeature = null;
+let diversify = {};
+let state = { view:'fields', index:'ndvi', mode:'year', year:null, cohort:'all', county:'all' };
+let timer = null;
+
+function lerp(a,b,t){ return a + (b-a)*t; }
+function hex2rgb(h){ return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]; }
+
+function rampColor(stops, t){
+  t = Math.max(0, Math.min(1, t));
+  const n = stops.length - 1;
+  const i = Math.min(Math.floor(t*n), n-1);
+  const f = t*n - i;
+  const a = hex2rgb(stops[i]), b = hex2rgb(stops[i+1]);
+  return `rgb(${Math.round(lerp(a[0],b[0],f))},${Math.round(lerp(a[1],b[1],f))},${Math.round(lerp(a[2],b[2],f))})`;
+}
+
+function indexMeta(key){ return meta.indices.find(i => i.key === key); }
+
+// Chips are separate files when served from a directory, and inlined data URIs in the
+// standalone build. Same lookup either way.
+function chipSrc(fieldId, year){
+  if(chipData) return chipData[`${fieldId}_${year}`] || null;
+  const years = chips[fieldId];
+  return (years && years.includes(year)) ? `chips/${fieldId}_${year}.jpg` : null;
+}
+
+// What else grows around here. Built from what neighbours actually farm rather than a
+// climate model: a crop growing nearby is proof it grows in these conditions.
+// How this field ranks against comparable fields. A bare slope means little to a
+// grower; a rank against their neighbours growing the same crop means a lot.
+function benchmarkBlock(p){
+  const pct = p['pct_' + state.index + '_recent'];
+  const slopePct = p['pct_' + state.index + '_slope'];
+  const crop = p.crop_2023 || 'this crop';
+
+  if(pct === null || pct === undefined){
+    return `<p class="hint" style="margin:9px 0 0">Not enough ${crop.toLowerCase()}
+      fields sampled in ${p.county} County to rank this one against its neighbours.</p>`;
+  }
+
+  // Say it the way a person would. "Bottom 18%" and "top 20%" are meaningful; "top 48%"
+  // is technically true of a middling field and misleads, so the middle band says so.
+  const band = pct >= 67 ? `Top ${Math.max(1, Math.round(100 - pct))}%`
+             : pct <= 33 ? `Bottom ${Math.max(1, Math.round(pct))}%`
+             : 'Middle of the pack';
+  const tone = pct >= 67 ? 'good' : pct <= 33 ? 'poor' : 'mid';
+
+  const trendNote = (slopePct === null || slopePct === undefined) ? ''
+    : slopePct >= 67 ? ' Its trend is among the stronger ones too.'
+    : slopePct <= 33 ? ' Its trend is among the weaker ones too.'
+    : ' Its trend sits mid-range.';
+
+  return `
+    <div class="bench">
+      <div class="benchbar"><span style="left:${Math.min(98, Math.max(0, pct))}%"></span></div>
+      <div class="benchtext">
+        <strong class="${tone}">${band}</strong> of ${p.n_peers} sampled ${crop.toLowerCase()}
+        blocks in ${p.county} County on ${state.index.toUpperCase()}.${trendNote}
+      </div>
+    </div>`;
+}
+
+function diversifyBlock(cellId){
+  const d = diversify[String(cellId)];
+  if(!d) return '';
+
+  const arrow = t => (t === null || t === undefined) ? ''
+    : `<span class="trend ${t>10?'up':t<-10?'down':''}">${t>0?'+':''}${Math.round(t)}%</span>`;
+
+  const row = (name, num, t) => `
+    <div class="drow"><span class="dname">${name}</span>
+      <span class="dnum">${num}</span><span class="dnum">${arrow(t)}</span></div>`;
+
+  // Collapsed by default, with the headline fact in the summary line. The detail is
+  // worth keeping — a grower deciding what to plant wants the acreage and the trend —
+  // but it should not be a wall of text you have to scroll past to reach anything else.
+  const top = d.current[0];
+  const currentSummary = top
+    ? `mostly ${top.name} (${top.share}%) · ${d.current.length} crops`
+    : `${d.current.length} crops`;
+
+  const classes = Object.entries(d.by_class || {});
+  const totalOptions = classes.reduce((n,[,list]) => n + list.length, 0);
+
+  const groups = classes.map(([label, list]) => `
+    <details class="dsub">
+      <summary><span>${label}</span><span class="dcount">${list.length}</span></summary>
+      <div class="dbody">
+        <p class="dnote">${list[0].commitment}</p>
+        ${list.map(c => row(c.name, (c.nearby_acres/1000).toFixed(1)+'k ac', c.trend_pct)).join('')}
+      </div>
+    </details>`).join('');
+
+  // An empty candidate list is a real answer in a monoculture, not a failure — say so,
+  // rather than showing a blank panel that looks broken.
+  const nearbyBody = totalOptions > 0
+    ? `<p class="dnote">
+         Crops well established within ${d.neighbour_km} km but barely present here, so
+         they are proven in these conditions. Percentages are the change in that crop's
+         acreage across ${d.region} 2016–2023 — a rough read on whether growers are
+         moving toward it or away.</p>
+       ${groups}`
+    : `<p class="dnote">Every crop established within ${d.neighbour_km} km is already
+         grown here. In a district this concentrated there is no local example of
+         something different working — which is itself worth knowing. The regional list
+         below is the full set of options proven anywhere in ${d.region}.</p>`;
+
+  // All crops proven anywhere in the study area. Always populated, so a grower always
+  // has something to look at even where the neighbourhood comparison comes up empty.
+  const regionCrops = d.region_crops || [];
+  const byClass = {};
+  regionCrops.forEach(c => (byClass[c.class_label] = byClass[c.class_label] || []).push(c));
+  const regionGroups = Object.entries(byClass).map(([label, list]) => `
+    <details class="dsub">
+      <summary><span>${label}</span><span class="dcount">${list.length}</span></summary>
+      <div class="dbody">
+        <p class="dnote">${list[0].commitment}</p>
+        ${list.map(c => row(c.name, (c.acres/1000).toFixed(1)+'k ac', c.trend_pct)).join('')}
+      </div>
+    </details>`).join('');
+
+  return `
+    <details class="dsec">
+      <summary><span>Grown here now</span><span class="dcount">${d.current.length}</span></summary>
+      <div class="dbody">
+        <p class="dnote">${currentSummary}</p>
+        ${d.current.map(c => row(c.name, c.share+'%', c.trend_pct)).join('')}
+      </div>
+    </details>
+
+    <details class="dsec">
+      <summary><span>Could also grow here</span><span class="dcount">${totalOptions}</span></summary>
+      <div class="dbody">${nearbyBody}</div>
+    </details>
+
+    <details class="dsec">
+      <summary><span>All crops proven in ${d.region}</span><span class="dcount">${regionCrops.length}</span></summary>
+      <div class="dbody">
+        <p class="dnote">
+          Every crop farmed at scale anywhere in this study area, with its acreage and
+          how that acreage has moved since 2016. Proven in the region's climate — not
+          necessarily on your soil or with your water.</p>
+        ${regionGroups}
+        <p class="dnote" style="margin-top:9px">
+          This says a crop <em>grows</em> here, not that it will pay. Water rights,
+          contracts, processing access and prices are not in this data.</p>
+      </div>
+    </details>`;
+}
+
+function chipBlock(fieldId){
+  const years = chips[fieldId];
+  if(!years || !years.length) return '';
+  const src = chipSrc(fieldId, state.year) || chipSrc(fieldId, years[years.length-1]);
+  if(!src) return '';
+  return `<div class="chip">
+      <img id="chipImg" src="${src}" alt="Satellite view of this field">
+      <div class="chipcap"><span id="chipYear">${state.year}</span> · peak season, true colour</div>
+    </div>`;
+}
+
+function refreshChip(){
+  const img = document.getElementById('chipImg');
+  if(!img || !selectedFeature) return;
+  const src = chipSrc(selectedFeature.properties.field_id, state.year);
+  if(src){
+    img.src = src;
+    img.style.opacity = 1;
+    document.getElementById('chipYear').textContent = state.year;
+  } else {
+    // No clear scene that summer. Dim rather than blank, so the slider does not jump.
+    img.style.opacity = .25;
+    document.getElementById('chipYear').textContent = state.year + ' — no clear image';
+  }
+}
+
+function colorFor(props){
+  const im = indexMeta(state.index);
+  if(state.mode === 'trend'){
+    const sl = props[state.index + '_slope'];
+    if(sl === null || sl === undefined) return '#cfcabf';
+    // Map [-slope_abs, +slope_abs] onto [0,1] so zero sits at the neutral midpoint.
+    return rampColor(RAMPS.trend, (sl + im.slope_abs) / (2*im.slope_abs));
+  }
+  const store = state.view === 'areas' ? areaSeries : series;
+  const key = state.view === 'areas' ? String(props.cell_id) : props.field_id;
+  const s = store[key];
+  if(!s) return '#cfcabf';
+  const i = s.years.indexOf(state.year);
+  const v = i < 0 ? null : s[state.index][i];
+  if(v === null || v === undefined) return '#cfcabf';
+  return rampColor(RAMPS[im.scale], (v - im.value_min) / (im.value_max - im.value_min));
+}
+
+function drawRamp(){
+  const im = indexMeta(state.index);
+  const stops = state.mode === 'trend' ? RAMPS.trend : RAMPS[im.scale];
+  document.getElementById('ramp').style.background =
+    `linear-gradient(to right, ${stops.join(',')})`;
+  if(state.mode === 'trend'){
+    document.getElementById('rampLo').textContent = `−${im.slope_abs}/yr (falling)`;
+    document.getElementById('rampHi').textContent = `+${im.slope_abs}/yr (rising)`;
+  } else {
+    const [lo,hi] = im.scale_label.split(' → ');
+    document.getElementById('rampLo').textContent = `${im.value_min}  ${lo}`;
+    document.getElementById('rampHi').textContent = `${hi}  ${im.value_max}`;
+  }
+}
+
+function draw(){
+  if(layer) map.removeLayer(layer);
+
+  if(state.view === 'areas'){
+    // One shaded cell per grid square — the landscape read. Individual fields are
+    // meaningless at this zoom; the median of a cell is not.
+    layer = L.geoJSON({type:'FeatureCollection',features:areas},{
+      style: f => ({color:'#ffffff',weight:1,opacity:.5,
+                    fillColor:colorFor(f.properties),fillOpacity:.7}),
+      onEachFeature: (f,l) => {
+        l.bindTooltip(`${f.properties.n_fields} fields sampled`,{sticky:true});
+        l.on('click', () => selectArea(f,l));
+      }
+    }).addTo(map);
+    selected = null;
+    return;
+  }
+
+  const shown = features.filter(f =>
+    (state.cohort === 'all' || f.properties.cohort === state.cohort) &&
+    (state.county === 'all' || f.properties.county === state.county));
+
+  const tip = f => `${f.properties.cohort} · ${f.properties.county} Co. · ${Math.round(f.properties.acres)} ac`;
+
+  // Always draw the true parcel geometry. A 40-acre field is only a few pixels across
+  // at valley zoom, so instead of substituting a dot we stroke the polygon in its own
+  // fill colour — the outline gives the shape enough visual weight to be seen while
+  // the thing on screen remains the real field boundary, not a proxy for it.
+  layer = L.geoJSON({type:'FeatureCollection',features:shown},{
+    smoothFactor: 0.3,
+    style: f => {
+      const fill = colorFor(f.properties);
+      const zoomedIn = map.getZoom() >= PARCEL_DETAIL_ZOOM;
+      return zoomedIn
+        ? {color:'#ffffff', weight:0.7, opacity:0.9, fillColor:fill, fillOpacity:0.85}
+        : {color:fill, weight:3, opacity:0.95, fillColor:fill, fillOpacity:0.95};
+    },
+    onEachFeature: (f,l) => { l.on('click',()=>select(f,l)); l.bindTooltip(tip(f),{sticky:true}); }
+  });
+
+  layer.addTo(map);
+  selected = null;
+}
+
+function selectArea(feature, lyr){
+  selectedFeature = null;
+  if(selected) selected.setStyle({color:'#ffffff', weight:1});
+  selected = lyr;
+  lyr.setStyle({color:'#111',weight:2.4,opacity:1});
+  const p = feature.properties;
+  const s = areaSeries[String(p.cell_id)];
+  const im = indexMeta(state.index);
+  const sl = p[state.index + '_slope'];
+  const dir = sl > 0 ? 'greening up' : sl < 0 ? 'browning off' : 'flat';
+  document.getElementById('readout').innerHTML = `
+    <div class="big">This area is ${dir}</div>
+    <div style="font-size:12.5px;color:var(--muted)">
+      median of ${p.n_fields} sampled fields · ${sl>0?'+':''}${sl}/yr
+    </div>
+    ${s ? meta.indices.map(i=>sparkline(s,i.key,i)).join('') : ''}
+    <table>
+      <tr><td>Region</td><td>${p.region || '—'}</td></tr>
+      <tr><td>Grid cell</td><td>${meta.grid_km} × ${meta.grid_km} km</td></tr>
+      <tr><td>Fields sampled</td><td>${p.n_fields}</td></tr>
+    </table>
+    <p style="font-size:11.5px;color:var(--muted);margin-top:8px">
+      Cell values are medians of the sampled fields inside them, not a census of all
+      farmland in the cell.</p>
+    ${diversifyBlock(p.cell_id)}`;
+}
+
+function sparkline(s, key, im){
+  const w=320,h=44,pad=4;
+  const ys = s[key], xs = s.years;
+  const valid = ys.map((v,i)=>[i,v]).filter(p=>p[1]!==null);
+  if(valid.length < 2) return '';
+  const lo = Math.min(...valid.map(p=>p[1])), hi = Math.max(...valid.map(p=>p[1]));
+  const span = (hi-lo)||1;
+  const pts = valid.map(([i,v])=>{
+    const x = pad + (i/Math.max(xs.length-1,1))*(w-2*pad);
+    const y = h-pad-((v-lo)/span)*(h-2*pad);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  // Mark the year the slider is on, so the chart and the map agree.
+  const ci = xs.indexOf(state.year);
+  const cx = ci<0 ? null : pad + (ci/Math.max(xs.length-1,1))*(w-2*pad);
+  return `<div class="spark">
+    <div class="sparkhead"><span>${im.label}</span><span>${lo.toFixed(2)} – ${hi.toFixed(2)}</span></div>
+    <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;background:#fff;border:1px solid var(--line);border-radius:5px">
+      ${cx!==null?`<line x1="${cx}" y1="0" x2="${cx}" y2="${h}" stroke="#c8c2b4" stroke-width="1"/>`:''}
+      <polyline points="${pts}" fill="none" stroke="#33322e" stroke-width="1.6" stroke-linejoin="round"/>
+    </svg></div>`;
+}
+
+function select(feature, lyr){
+  // Hand the previous selection back to the layer's own style function rather than
+  // hardcoding an outline — the correct one now depends on zoom, so a fixed value
+  // repaints low-zoom parcels with the zoomed-in hairline and they vanish.
+  if(selected && layer.resetStyle) layer.resetStyle(selected);
+  selected = lyr;
+  lyr.setStyle({color:'#111',weight:2.6,opacity:1});
+
+  selectedFeature = feature;
+  const p = feature.properties;
+  const s = series[p.field_id];
+  const im = indexMeta(state.index);
+  const slope = p[state.index + '_slope'], pv = p[state.index + '_p'];
+  const sig = pv !== null && pv < 0.05;
+  const dir = slope > 0 ? 'rising' : slope < 0 ? 'falling' : 'flat';
+  const headline = sig ? `${im.label.split(' (')[0]} is ${dir}` : 'No clear change';
+
+  document.getElementById('readout').innerHTML = `
+    <div class="big">${headline}</div>
+    <div style="font-size:12.5px;color:var(--muted)">
+      ${sig ? `${slope>0?'+':''}${slope}/yr · statistically clear (p=${pv})`
+            : `trend not distinguishable from noise${pv!==null?` (p=${pv})`:''}`}
+    </div>
+    ${p.worst_year ? `<div class="worst">
+      <strong>${p.worst_year}</strong> was this field's worst year —
+      ${Math.round(p.worst_year_drop)}% below its own normal greenness.
+      <span class="worstlink">Drag the year slider to ${p.worst_year} to see it.</span>
+    </div>` : ''}
+    ${benchmarkBlock(p)}
+    ${chipBlock(p.field_id)}
+    ${s ? meta.indices.map(i=>sparkline(s,i.key,i)).join('') : ''}
+    <table>
+      <tr><td>Change</td><td>${p.cohort}</td></tr>
+      <tr><td>Crop 2016</td><td>${p.crop_2016}</td></tr>
+      <tr><td>Crop 2023</td><td>${p.crop_2023}</td></tr>
+      <tr><td>Planted</td><td>${p.planted ? p.planted : 'not recorded'}</td></tr>
+      <tr><td>Field size</td><td>${Math.round(p.acres)} acres</td></tr>
+      <tr><td>County</td><td>${p.county || '—'}</td></tr>
+      <tr><td>Study region</td><td>${p.region || p.hydro_region || '—'}</td></tr>
+      ${p.district ? `<tr><td>District</td><td>${p.district}</td></tr>` : ''}
+      <tr><td>Analysis</td><td>${p.analysis || '—'}</td></tr>
+      <tr><td>Years used</td><td>${p.first_year}–${p.last_year}</td></tr>
+    </table>
+    ${diversifyBlock(p.cell_id)}`;
+}
+
+function setIndex(k){
+  state.index = k;
+  document.querySelectorAll('#indexSeg button').forEach(b=>b.classList.toggle('on', b.dataset.k===k));
+  const im = indexMeta(k);
+  document.getElementById('indexHelp').innerHTML =
+    `<strong>${k.toUpperCase()}</strong> — ${im.help}`;
+  drawRamp(); draw();
+}
+
+function setView(v){
+  state.view = v;
+  document.querySelectorAll('#viewSeg button').forEach(b=>b.classList.toggle('on', b.dataset.view===v));
+  document.getElementById('viewHelp').textContent = v === 'areas'
+    ? `Median condition per ${meta.grid_km} km cell — the landscape read.`
+    : 'Every sampled field, drawn as its true parcel boundary.';
+  // Filtering by cohort would change which fields a cell averages, so it is hidden
+  // rather than silently ignored.
+  document.getElementById('cohortBlock').style.display = v === 'areas' ? 'none' : '';
+  document.getElementById('readout').innerHTML =
+    '<span class="empty">Tap ' + (v === 'areas' ? 'an area' : 'a field') + ' on the map.</span>';
+  draw();
+}
+
+function setMode(m){
+  state.mode = m;
+  document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('on', b.dataset.mode===m));
+  document.getElementById('yearBlock').style.display = m==='year' ? '' : 'none';
+  if(m!=='year') stop();
+  drawRamp(); draw();
+}
+
+function stop(){ if(timer){ clearInterval(timer); timer=null; document.getElementById('play').textContent='▶'; } }
+
+function play(){
+  if(timer){ stop(); return; }
+  document.getElementById('play').textContent='❚❚';
+  timer = setInterval(()=>{
+    const i = meta.years.indexOf(state.year);
+    setYear(meta.years[(i+1) % meta.years.length]);
+  }, 900);
+}
+
+function setYear(y){
+  state.year = y;
+  document.getElementById('yearLabel').textContent = y;
+  document.getElementById('yearSlider').value = meta.years.indexOf(y);
+  draw();
+  refreshChip();      // scrubbing the years scrubs the imagery too
+}
+
+async function init(){
+  // When built as a standalone file the data is embedded, so the page works from
+  // a file:// URL with no server. Served from a directory, it fetches instead.
+  const [m,g,s,a,as_,c,dv] = window.EMBEDDED
+    ? [window.EMBEDDED.meta, window.EMBEDDED.fields, window.EMBEDDED.series,
+       window.EMBEDDED.areas, window.EMBEDDED.areaSeries, window.EMBEDDED.chips,
+       window.EMBEDDED.diversify]
+    : await Promise.all([
+        fetch('data/meta.json').then(r=>r.json()),
+        fetch('data/fields.geojson').then(r=>r.json()),
+        fetch('data/series.json').then(r=>r.json()),
+        fetch('data/areas.geojson').then(r=>r.json()).catch(()=>({features:[]})),
+        fetch('data/area_series.json').then(r=>r.json()).catch(()=>({})),
+        fetch('data/chips.json').then(r=>r.json()).catch(()=>({})),
+        fetch('data/diversification.json').then(r=>r.json()).catch(()=>({})),
+      ]);
+  areas = (a && a.features) ? a.features : [];
+  areaSeries = as_ || {};
+  chips = c || {};
+  chipData = window.EMBEDDED ? (window.EMBEDDED.chipData || null) : null;
+  diversify = dv || {};
+  meta = m; features = g.features; series = s;
+  state.year = meta.years[meta.years.length-1];
+
+  document.getElementById('title').textContent = meta.title;
+  document.getElementById('subtitle').textContent =
+    `${meta.subtitle} · ${meta.n_fields} fields`;
+  document.getElementById('method').textContent = meta.method;
+  document.getElementById('caveats').innerHTML =
+    meta.caveats.map(c=>`<li>${c}</li>`).join('');
+
+  const seg = document.getElementById('indexSeg');
+  meta.indices.forEach(i=>{
+    const b=document.createElement('button');
+    b.dataset.k=i.key;
+    // Both names on the button: the plain-language one a farmer reads, and the
+    // acronym they will meet in the report, on Planet's docs, and anywhere else.
+    b.innerHTML = `${i.label.replace(/ \(.*\)/,'')}<span class="acr">${i.key.toUpperCase()}</span>`;
+    b.onclick=()=>setIndex(i.key); seg.appendChild(b);
+  });
+
+  const cf = document.getElementById('cohortFilter');
+  meta.cohorts.forEach(c=>{
+    const o=document.createElement('option'); o.value=c; o.textContent=c; cf.appendChild(o);
+  });
+  cf.value='all';
+  cf.onchange=()=>{ state.cohort=cf.value; draw(); };
+
+  const nf = document.getElementById('countyFilter');
+  (meta.counties||[]).forEach(c=>{
+    const o=document.createElement('option'); o.value=c; o.textContent=c+' County'; nf.appendChild(o);
+  });
+  nf.value='all';
+  nf.onchange=()=>{ state.county=nf.value; draw(); };
+
+  const sl = document.getElementById('yearSlider');
+  sl.min=0; sl.max=meta.years.length-1; sl.step=1;
+  sl.oninput=()=>{ stop(); setYear(meta.years[+sl.value]); };
+  document.getElementById('play').onclick=play;
+  document.querySelectorAll('#modeSeg button').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
+  document.querySelectorAll('#viewSeg button').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+
+  map = L.map('map').setView([meta.center[1],meta.center[0]], meta.zoom);
+  // Carto's Positron is deliberately desaturated, so the brown-to-green data reads as
+  // the loudest thing on the page. OSM's default is too colourful to overlay on.
+  const light = L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    {maxZoom:19, subdomains:'abcd',
+     attribution:'&copy; OpenStreetMap contributors &copy; CARTO'}).addTo(map);
+
+  // More road and place detail, for finding your own ground.
+  const detailed = L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    {maxZoom:19, subdomains:'abcd',
+     attribution:'&copy; OpenStreetMap contributors &copy; CARTO'});
+
+  // Real imagery — at field zoom you can see the orchard rows themselves.
+  const imagery = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    {maxZoom:19, attribution:'Imagery &copy; Esri'});
+  const labels = L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',
+    {maxZoom:19, subdomains:'abcd', attribution:''});
+  const satellite = L.layerGroup([imagery, labels]);
+
+  L.control.layers({'Light':light,'Detailed':detailed,'Satellite':satellite},null,
+                 {collapsed:true,position:'bottomleft'}).addTo(map);
+
+  // Basemap tiles are the one thing that cannot be bundled. If they are blocked —
+  // offline, or a viewer with a strict content-security policy — the field data still
+  // renders on the plain background, so say what happened instead of leaving a blank.
+  let tileFailed = false;
+  light.on('tileerror', () => {
+    if(tileFailed) return;
+    tileFailed = true;
+    const note = document.createElement('div');
+    note.style.cssText = 'position:absolute;top:10px;left:50%;transform:translateX(-50%);'
+      + 'z-index:500;background:#fffbe8;border:1px solid #e0d5a8;border-radius:6px;'
+      + 'padding:6px 11px;font-size:12px;color:#6b5d2f;box-shadow:0 1px 5px rgba(0,0,0,.1)';
+    note.textContent = 'Background map unavailable here — field data still works. '
+      + 'Open this file in a browser for the basemap.';
+    document.getElementById('map').appendChild(note);
+  });
+
+  let wasDetailed = map.getZoom() >= PARCEL_DETAIL_ZOOM;
+  map.on('zoomend',()=>{
+    const d = map.getZoom() >= PARCEL_DETAIL_ZOOM;
+    if(d !== wasDetailed){ wasDetailed = d; draw(); }
+  });
+
+  setView('fields'); setIndex('ndvi'); setYear(state.year);
+}
+
+init().catch(e=>{
+  document.getElementById('subtitle').textContent='Could not load data — run steps/04_build_map.py first.';
+  console.error(e);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+{
+  "title": "Farms on the Move",
+  "subtitle": "Butte, Colusa, Fresno, Glenn, Kern, Kings, Madera, Merced, Napa, San Joaquin, Sonoma, Stanislaus, Sutter, Tulare, Yolo \u00b7 crop transitions and field condition, 2017\u20132025",
+  "n_fields": 3727,
+  "years": [
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "counties": [
+    "Butte",
+    "Colusa",
+    "Fresno",
+    "Glenn",
+    "Kern",
+    "Kings",
+    "Madera",
+    "Merced",
+    "Napa",
+    "San Joaquin",
+    "Sonoma",
+    "Stanislaus",
+    "Sutter",
+    "Tulare",
+    "Yolo"
+  ],
+  "districts": [
+    "Healdsburg (Dry Creek / Alexander)",
+    "Napa Valley (Napa\u2013St. Helena)",
+    "Sonoma Valley"
+  ],
+  "regions": [
+    "Napa / Sonoma wine country",
+    "Sacramento Valley",
+    "San Joaquin Valley",
+    "Tulare Lake Basin"
+  ],
+  "indices": [
+    {
+      "key": "ndvi",
+      "label": "Vigour (NDVI)",
+      "help": "How much healthy green canopy the field is carrying.",
+      "scale": "good_bad",
+      "scale_label": "less green \u2192 greener",
+      "value_min": 0.268,
+      "value_max": 0.929,
+      "slope_abs": 0.0473
+    },
+    {
+      "key": "ndmi",
+      "label": "Crop moisture (NDMI)",
+      "help": "Water content inside the plants. Falls when a crop is water-stressed.",
+      "scale": "good_bad",
+      "scale_label": "drier plants \u2192 wetter plants",
+      "value_min": -0.129,
+      "value_max": 0.309,
+      "slope_abs": 0.0377
+    },
+    {
+      "key": "ndwi",
+      "label": "Surface water (NDWI)",
+      "help": "Standing water on the ground \u2014 flooding, ponding, flood irrigation.",
+      "scale": "dry_wet",
+      "scale_label": "dry ground \u2192 standing water",
+      "value_min": -0.71,
+      "value_max": -0.3,
+      "slope_abs": 0.0362
+    }
+  ],
+  "cohorts": [
+    "Alfalfa and Alfalfa Mixtures",
+    "Almonds",
+    "Beans (Dry)",
+    "Corn, Sorghum and Sudan",
+    "D8",
+    "Grapes",
+    "Melons, Squash and Cucumbers",
+    "Miscellaneous Grain and Hay",
+    "Mixed Pasture",
+    "Olives",
+    "Peaches/Nectarines",
+    "Pistachios",
+    "Rice",
+    "Safflower",
+    "Sunflowers",
+    "T32",
+    "Walnuts",
+    "Wheat",
+    "almond '18-22, was almond",
+    "almond '18-22, was grape",
+    "almond mature (pre-2012)",
+    "almonds \u2192 almonds",
+    "almonds \u2192 idle",
+    "almonds \u2192 pistachios",
+    "grapes \u2192 almonds",
+    "grapes \u2192 grapes",
+    "grapes \u2192 pistachios",
+    "pistachio '18-22, was almond",
+    "pistachio '18-22, was grape",
+    "pistachio mature (pre-2012)"
+  ],
+  "grid_km": 12,
+  "n_cells": 240,
+  "center": [
+    -121.21937576634791,
+    38.11955109441967
+  ],
+  "zoom": 8,
+  "method": "Sentinel-2 L2A via Planet's Statistical API. For each month we take the clearest observation and read all three indices from that same scene. Growing season is March\u2013October; NDVI uses the season peak, NDMI and NDWI the season mean. Trends are Theil\u2013Sen slopes tested with Mann\u2013Kendall.",
+  "caveats": [
+    "Index levels are NOT comparable between different crops, or between counties. A trellised vineyard reads lower than an almond canopy whatever its health. Compare trends, not levels.",
+    "Fields that switched crops were replanted, so they hold young trees whose canopy is still filling in. The age-matched cohorts control for this; the transition cohorts do not.",
+    "These are observed vegetation trends, not yield, and not a recommendation. They are a starting point for a conversation with local expertise."
+  ]
+}

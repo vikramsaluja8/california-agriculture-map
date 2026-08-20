@@ -108,6 +108,44 @@ MATURE_NDVI = 0.45
 # C citrus/subtropical, V vineyard.
 PERENNIAL_CLASSES = {"D", "C", "V"}
 
+# Counting cropping cycles. A cycle is one rise into a closed canopy followed by a fall
+# back to bare ground — plant, grow, harvest. Two thresholds rather than one, so a
+# series wobbling around a single value cannot be counted twice.
+CYCLE_HIGH = 0.45      # canopy closed: a crop is standing
+CYCLE_LOW = 0.25       # back to bare soil: it has been taken off
+
+
+def count_cycles(values: list[float]) -> int:
+    """Cycles in one field-year, by hysteresis over the index series.
+
+    Needs sub-monthly data to work: a Salinas lettuce cycle runs 60-90 days, so at
+    monthly resolution two crops can blur into one broad peak. At 10-day resolution
+    each cycle spans 6-9 observations and separates cleanly.
+    """
+    cycles, standing = 0, False
+    for v in values:
+        if v is None or v != v:          # skip gaps and NaN
+            continue
+        if not standing and v >= CYCLE_HIGH:
+            cycles += 1
+            standing = True
+        elif standing and v <= CYCLE_LOW:
+            standing = False
+    return cycles
+
+
+def cycles_per_year(series: pd.DataFrame) -> pd.DataFrame:
+    """Cropping cycles per field per year, from the raw sub-annual series."""
+    df = series.copy()
+    df["year"] = df["date"].dt.year
+    df["ndvi"] = pd.to_numeric(df["ndvi"], errors="coerce")
+    rows = []
+    for (fid, year), g in df.sort_values("date").groupby(["field_id", "year"]):
+        rows.append({"field_id": fid, "year": year,
+                     "cycles": count_cycles(g["ndvi"].tolist()),
+                     "observations": len(g)})
+    return pd.DataFrame(rows)
+
 
 def pick(fields: gpd.GeoDataFrame, per_crop: int, seed: int,
          min_acres: float, max_acres: float, min_acres_group: float) -> gpd.GeoDataFrame:
@@ -197,6 +235,9 @@ def main() -> None:
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--cluster", choices=sorted(DISTRICT_SETS),
                     help="restrict the sample to named growing districts")
+    ap.add_argument("--interval", default="P1M",
+                    help="time resolution, e.g. P1M or P10D. Cost barely changes; "
+                         "P10D is needed to resolve multi-crop rotations.")
     ap.add_argument("--min-group-acres", type=float, default=None,
                     help="acreage a crop needs within its group to be sampled")
     args = ap.parse_args()
@@ -225,14 +266,31 @@ def main() -> None:
 
     client = PlanetStats()
     print(f"\nfetching {len(sample)} field series…")
-    series = fetch_cohorts(sample, client, START, END, args.workers)
+    series = fetch_cohorts(sample, client, START, END, args.workers, args.interval)
     print(f"\n{client.summary()}")
     if series.empty:
         sys.exit("nothing returned")
 
-    yearly = annual(series)
+    # With 10-day data a year holds ~36 observations, so the monthly floor of 4 would
+    # accept a year that is 90% missing. Scale it with the resolution actually used.
+    per_year = {"P1M": 12, "P15D": 24, "P10D": 36}.get(args.interval, 12)
+    yearly = annual(series, min_obs=max(4, per_year // 3))
     trends = flag_mature(yearly, field_trends(yearly), sample)
     print(f"{len(trends)} fields trended")
+
+    cyc = cycles_per_year(series)
+    if not cyc.empty and args.interval != "P1M":
+        per_field = cyc.groupby("field_id")["cycles"].mean().round(2)
+        trends["cycles_per_year"] = trends["field_id"].map(per_field)
+        yearly = yearly.merge(cyc[["field_id", "year", "cycles"]],
+                              on=["field_id", "year"], how="left")
+        print("\ncropping cycles per year, by crop:")
+        merged = trends.merge(sample[["field_id", "cohort"]].rename(
+            columns={"cohort": "crop"}), on="field_id", how="left")
+        for crop, g in merged.groupby("crop"):
+            v = g["cycles_per_year"].dropna()
+            if len(v) >= 5:
+                print(f"  {crop[:30]:<31} {v.mean():>4.2f} cycles/yr  (n={len(v)})")
 
     tag = args.county.lower()
     series.to_parquet(PROCESSED / f"condition_{tag}_monthly.parquet", index=False)

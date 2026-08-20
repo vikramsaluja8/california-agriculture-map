@@ -529,6 +529,9 @@ function select(feature, lyr){
       <tr><td>County</td><td>${p.county || '—'}</td></tr>
       <tr><td>Study region</td><td>${p.region || p.hydro_region || '—'}</td></tr>
       ${p.district ? `<tr><td>District</td><td>${p.district}</td></tr>` : ''}
+      ${Number.isFinite(Number(p.cycles_per_year)) ? `<tr><td>Crops per year</td>
+        <td>${Number(p.cycles_per_year).toFixed(1)}
+        <span style="color:var(--muted)">planting cycles</span></td></tr>` : ''}
       <tr><td>Analysis</td><td>${p.analysis || '—'}</td></tr>
       <tr><td>Years used</td><td>${p.first_year}–${p.last_year}</td></tr>
     </table>

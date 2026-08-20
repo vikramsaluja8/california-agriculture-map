@@ -101,8 +101,9 @@ def load_all():
         merged = fields.merge(trends, on="field_id", how="inner", suffixes=("", "_t"))
         merged = merged.drop(columns=[c for c in merged.columns if c.endswith("_t")])
         merged["county"] = county
-        if "district" not in merged.columns:
-            merged["district"] = None
+        for optional in ("district", "cycles_per_year"):
+            if optional not in merged.columns:
+                merged[optional] = None
         merged["analysis"] = {"cohort": "transitions",
                               "agematch": "age-matched",
                               "condition": "condition sample"}[kind]
@@ -212,12 +213,21 @@ def main() -> None:
 
     keep = ["field_id", "county", "region", "district", "analysis", "cohort",
             "crop_2016", "crop_2023", "acres", "planted", "hydro_region",
-            "n_years", "first_year", "last_year", "worst_year", "worst_year_drop"]
+            "n_years", "first_year", "last_year", "worst_year", "worst_year_drop",
+            "cycles_per_year"]
     for idx in INDEX_NAMES:
         keep += [f"{idx}_slope", f"{idx}_p", f"{idx}_mean", f"{idx}_recent"]
     keep = [c for c in keep if c in fields.columns]
 
     out = fields[keep + ["geometry"]].copy()
+
+    # Columns that exist for only some regions arrive as object dtype — float where the
+    # region supplied them, None everywhere else — and GeoJSON then writes them as
+    # STRINGS. The map calls .toFixed() on them, which throws on a string and takes the
+    # whole panel down. Coerce every numeric column explicitly.
+    for col in ("cycles_per_year", "worst_year", "worst_year_drop", "planted", "acres"):
+        if col in out.columns:
+            out[col] = pd.to_numeric(out[col], errors="coerce")
 
     # Worst-year anomaly. A nine-year trend describes gradual drift well and hides
     # shocks completely: Colusa rice ran a flat +0.0003/yr NDVI trend across a year when

@@ -1,7 +1,7 @@
 {
   "title": "Farms on the Move",
-  "subtitle": "Butte, Colusa, Fresno, Glenn, Kern, Kings, Madera, Merced, Napa, San Joaquin, Sonoma, Stanislaus, Sutter, Tulare, Yolo \u00b7 crop transitions and field condition, 2017\u20132025",
-  "n_fields": 3727,
+  "subtitle": "Butte, Colusa, Fresno, Glenn, Kern, Kings, Madera, Merced, Monterey, Napa, San Benito, San Joaquin, Sonoma, Stanislaus, Sutter, Tulare, Yolo \u00b7 crop transitions and field condition, 2017\u20132025",
+  "n_fields": 4217,
   "years": [
     2017,
     2018,
@@ -22,7 +22,9 @@
     "Kings",
     "Madera",
     "Merced",
+    "Monterey",
     "Napa",
+    "San Benito",
     "San Joaquin",
     "Sonoma",
     "Stanislaus",
@@ -38,6 +40,7 @@
   "regions": [
     "Napa / Sonoma wine country",
     "Sacramento Valley",
+    "Salinas Valley",
     "San Joaquin Valley",
     "Tulare Lake Basin"
   ],
@@ -48,9 +51,9 @@
       "help": "How much healthy green canopy the field is carrying.",
       "scale": "good_bad",
       "scale_label": "less green \u2192 greener",
-      "value_min": 0.268,
-      "value_max": 0.929,
-      "slope_abs": 0.0473
+      "value_min": 0.282,
+      "value_max": 0.927,
+      "slope_abs": 0.0442
     },
     {
       "key": "ndmi",
@@ -58,9 +61,9 @@
       "help": "Water content inside the plants. Falls when a crop is water-stressed.",
       "scale": "good_bad",
       "scale_label": "drier plants \u2192 wetter plants",
-      "value_min": -0.129,
-      "value_max": 0.309,
-      "slope_abs": 0.0377
+      "value_min": -0.138,
+      "value_max": 0.302,
+      "slope_abs": 0.036
     },
     {
       "key": "ndwi",
@@ -68,26 +71,32 @@
       "help": "Standing water on the ground \u2014 flooding, ponding, flood irrigation.",
       "scale": "dry_wet",
       "scale_label": "dry ground \u2192 standing water",
-      "value_min": -0.71,
+      "value_min": -0.704,
       "value_max": -0.3,
-      "slope_abs": 0.0362
+      "slope_abs": 0.0343
     }
   ],
   "cohorts": [
     "Alfalfa and Alfalfa Mixtures",
     "Almonds",
     "Beans (Dry)",
+    "Carrots",
+    "Cole Crops",
     "Corn, Sorghum and Sudan",
     "D8",
     "Grapes",
+    "Lettuce/Leafy Greens",
     "Melons, Squash and Cucumbers",
     "Miscellaneous Grain and Hay",
+    "Miscellaneous Truck Crops",
     "Mixed Pasture",
     "Olives",
+    "Onions and Garlic",
     "Peaches/Nectarines",
     "Pistachios",
     "Rice",
     "Safflower",
+    "Strawberries",
     "Sunflowers",
     "T32",
     "Walnuts",
@@ -106,10 +115,10 @@
     "pistachio mature (pre-2012)"
   ],
   "grid_km": 12,
-  "n_cells": 240,
+  "n_cells": 275,
   "center": [
-    -121.21937576634791,
-    38.11955109441967
+    -121.23846079367055,
+    37.94552691544762
   ],
   "zoom": 8,
   "method": "Sentinel-2 L2A via Planet's Statistical API. For each month we take the clearest observation and read all three indices from that same scene. Growing season is March\u2013October; NDVI uses the season peak, NDMI and NDWI the season mean. Trends are Theil\u2013Sen slopes tested with Mann\u2013Kendall.",

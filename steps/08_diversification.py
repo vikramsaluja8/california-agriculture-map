@@ -55,6 +55,7 @@ REGIONS = {
     "Tulare Lake Basin": ["Fresno", "Kings", "Tulare", "Kern"],
     "San Joaquin Valley": ["Madera", "Merced", "Stanislaus", "San Joaquin"],
     "Sacramento Valley": ["Butte", "Colusa", "Glenn", "Sutter", "Yolo"],
+    "Salinas Valley": ["Monterey", "San Benito"],
     "Napa / Sonoma wine country": ["Napa", "Sonoma"],
 }
 COUNTIES = [c for cs in REGIONS.values() for c in cs]

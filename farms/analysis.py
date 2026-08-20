@@ -22,10 +22,11 @@ P_THRESHOLD = 0.05
 
 
 def fetch_cohorts(sample: gpd.GeoDataFrame, client: PlanetStats,
-                  start: str, end: str, workers: int = 8) -> pd.DataFrame:
+                  start: str, end: str, workers: int = 8,
+                  interval: str = "P1M") -> pd.DataFrame:
     jobs = [
         {"field_id": r.field_id, "geometry": r.geometry,
-         "start": start, "end": end, "acres": r.acres}
+         "start": start, "end": end, "acres": r.acres, "interval": interval}
         for r in sample.itertuples()
     ]
     cohort_of = dict(zip(sample["field_id"], sample["cohort"]))
@@ -47,7 +48,7 @@ def fetch_cohorts(sample: gpd.GeoDataFrame, client: PlanetStats,
     return pd.concat(out, ignore_index=True) if out else pd.DataFrame()
 
 
-def annual(series: pd.DataFrame) -> pd.DataFrame:
+def annual(series: pd.DataFrame, min_obs: int = MIN_MONTHS_PER_YEAR) -> pd.DataFrame:
     """One growing-season figure per field per year.
 
     NDVI takes the season peak — the standard canopy-vigour proxy, insensitive to
@@ -67,7 +68,7 @@ def annual(series: pd.DataFrame) -> pd.DataFrame:
         ndvi=("ndvi", "max"), ndmi=("ndmi", "mean"), ndwi=("ndwi", "mean"),
         months=("ndvi", "count"),
     ).reset_index()
-    return out[out["months"] >= MIN_MONTHS_PER_YEAR]
+    return out[out["months"] >= min_obs]
 
 
 def theil_sen(x: np.ndarray, y: np.ndarray) -> float:

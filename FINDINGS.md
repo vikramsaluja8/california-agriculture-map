@@ -783,3 +783,74 @@ Roughly 115,000 PU of 400,000/month.
 
 Standalone file is 8.8 MB. Coordinate precision is capped at five decimals (~1 m); past
 roughly 10 MB the hosted `site/` build is the better delivery route.
+
+## Salinas Valley — resolving the rotation
+
+Monterey and San Benito. The hardest region methodologically: two to three crops a year
+on the same ground means "one growing season per year" describes nothing real. Lettuce
+planted in March and again in July is not a trend, it is a rotation.
+
+### The enabler: time resolution is nearly free
+
+Measured on one field, same nine years:
+
+| Interval | PU | Intervals returned |
+|---|---|---|
+| P1M | 20.00 | 106 |
+| P15D | 20.27 | 212 |
+| P10D | 20.23 | 308 |
+
+**Ten-day composites cost 1% more than monthly for three times the temporal detail.**
+Cost tracks the time range, not the number of outputs. A Salinas lettuce cycle runs
+60–90 days, so at monthly resolution two crops blur into one broad peak; at 10 days each
+cycle spans 6–9 observations and separates cleanly.
+
+### Counting cropping cycles
+
+A cycle is one rise into a closed canopy followed by a fall back to bare ground.
+Detected by hysteresis — count on crossing NDVI 0.45 rising, re-arm on falling below
+0.25 — so a series wobbling around one value cannot be counted twice.
+
+| Crop | Cycles/yr | n |
+|---|---|---|
+| Lettuce / leafy greens | 2.01 | 70 |
+| Cole crops | 1.90 | 70 |
+| Carrots | 1.85 | 35 |
+| Onions and garlic | 1.79 | 35 |
+| Misc truck crops | 1.73 | 70 |
+| Misc grain and hay | 1.61 | 70 |
+| Mixed pasture | 1.40 | 35 |
+| Strawberries | 1.39 | 35 |
+| **Grapes** | **1.11** | 70 |
+
+**Grapes are the control.** A vineyard leafs out and senesces exactly once a year, so a
+detector counting noise would score them 2 or 3. Both counties returned 1.11
+independently. Lettuce and cole crops at ~2.0 match Salinas practice.
+
+Cole crops fall from 2.04 in coastal Monterey to 1.76 inland in San Benito — the coastal
+fog belt supports more cycles, and the method picks up the gradient.
+
+### Another silent-type bug
+
+`cycles_per_year` exists only for Salinas, so the column was float there and None
+everywhere else — object dtype, which GeoJSON writes as **strings**. In the browser
+`"1.89".toFixed(1)` throws, which would have taken down the entire detail panel for
+every Salinas field while every other region kept working. Every numeric column is now
+coerced explicitly before writing, and the map parses defensively.
+
+Third bug in this project with the same signature: output that looks right, is the
+wrong type or means the wrong thing, and fails somewhere far from the cause.
+
+## Final coverage
+
+**4,217 fields · 17 counties · 5 study regions · 275 grid cells · 2017–2025**
+
+| Region | Counties | Crops proven region-wide |
+|---|---|---|
+| Tulare Lake Basin | Fresno, Kings, Tulare, Kern | 41 |
+| San Joaquin Valley | Madera, Merced, Stanislaus, San Joaquin | 36 |
+| Sacramento Valley | Butte, Colusa, Glenn, Sutter, Yolo | 30 |
+| Salinas Valley | Monterey, San Benito | 19 |
+| Napa / Sonoma wine country | Napa, Sonoma (3 districts) | 8 |
+
+Roughly 131,000 processing units of a 400,000/month allowance.

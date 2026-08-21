@@ -1084,3 +1084,46 @@ Cosmetic only — no feature or interaction changes.
   panel (392 px) for better line length.
 - **Leaflet chrome** restyled to match — rounded controls, softer tooltips, muted
   attribution.
+
+## Second visual pass
+
+### The map
+
+Positron was the wrong default. It is designed to disappear, which across a whole
+valley reads as an empty page. Replaced with **Esri World Hillshade under a
+labels-only layer**, plus a soft terrain tint at low zoom.
+
+This is not only decoration. The relief shows the Central Valley floor against the
+Coast Ranges and the Sierra foothills — you can see why Salinas sits where it does,
+why Napa and Sonoma are separated by the Mayacamas, and why the valley is farmed and
+the ranges are not. The terrain is part of the subject.
+
+`Plain` (Positron) is kept for anyone who finds it busy, and `Satellite` is unchanged.
+
+### Warming the tiles
+
+Esri's hillshade is a cool neutral grey, so the flat valley floor rendered as bare
+white against a warm panel — two surfaces that clearly did not belong together. A
+`sepia(.20) saturate(.92)` filter pulls the terrain toward the parchment.
+
+Scoped by CSS class to the hillshade and terrain layers only, so satellite imagery
+keeps its true colour. Verified: 0 of 40 imagery tiles carry the filter.
+
+### Away from white
+
+| | Before | After |
+|---|---|---|
+| Panel ground | `#fbfaf7` near-white | `#f2ece1` parchment |
+| Card surface | `#ffffff` | `#fdfbf6` |
+| Masthead | plain text on the panel | deep forest band, cream type |
+| Active control | near-black | forest green |
+
+Parchment rather than white because the subject is farmland and the data ramp runs
+brown to green; a warm ground lets both sit naturally rather than glaring out of a
+screen-white sheet. Cards now lift off the ground by tone, so hierarchy no longer
+depends on drawing a border around everything.
+
+The masthead is a deep forest band rather than text floating at the top of a page —
+it gives the panel an anchor and the project an identity, and it stays put while a
+long panel scrolls. The panel also carries a soft shadow against the map, so the two
+read as layered surfaces rather than two flat halves of a window.

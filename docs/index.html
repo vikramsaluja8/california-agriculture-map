@@ -8,18 +8,26 @@
 <style>
   /* ------------------------------------------------------------------ tokens */
   :root{
-    --ink:#1a1917;           /* near-black, warmed slightly to sit with the browns */
-    --ink-2:#4a463e;
-    --muted:#7a7367;
-    --faint:#9a9285;
-    --panel:#fbfaf7;
-    --panel-2:#ffffff;
-    --line:#e2ddd2;
-    --line-soft:#eeeae1;
-    --accent:#3f6d4e;        /* deep green, picked from the healthy end of the ramp */
+    /* Parchment rather than white. The subject is farmland and the data ramp runs
+       brown to green; a warm ground lets both sit naturally instead of glaring
+       against a screen-white sheet. Cards lift off it in near-white, so hierarchy
+       comes from tone rather than from borders everywhere. */
+    --ink:#20201c;
+    --ink-2:#4c483f;
+    --muted:#7d7566;
+    --faint:#9d9483;
+    --panel:#f2ece1;         /* parchment — the panel ground */
+    --panel-2:#fdfbf6;       /* card surface, lifts off the parchment */
+    --line:#ddd4c3;
+    --line-soft:#e8e0d1;
+    --forest:#233d2e;        /* masthead band */
+    --forest-2:#2e5140;
+    --accent:#3f6d4e;
+    --cream:#f4efe3;
     --warn:#8a5a20;
-    --shadow: 0 1px 2px rgba(26,25,23,.05), 0 4px 14px rgba(26,25,23,.06);
-    --radius:9px;
+    --shadow: 0 1px 2px rgba(35,33,28,.06), 0 5px 16px rgba(35,33,28,.07);
+    --shadow-lg: 0 2px 6px rgba(35,33,28,.10), 0 14px 34px rgba(35,33,28,.10);
+    --radius:10px;
   }
   *{box-sizing:border-box}
   html,body{
@@ -31,34 +39,36 @@
     text-rendering:optimizeLegibility;
   }
   #app{display:flex;height:100%}
-  #map{flex:1;min-width:0;background:#eceae4}
+  #map{flex:1;min-width:0;background:#e6e0d3}
 
   /* ------------------------------------------------------------------- panel */
   #panel{
-    width:392px;flex:none;background:var(--panel);
-    border-left:1px solid var(--line);
+    width:396px;flex:none;background:var(--panel);
+    border-left:1px solid #d5cbb7;
     overflow-y:auto;overscroll-behavior:contain;
     padding:0 22px 48px;
+    box-shadow:-6px 0 22px -14px rgba(35,33,28,.35);
+    z-index:2;
   }
   #panel::-webkit-scrollbar{width:10px}
-  #panel::-webkit-scrollbar-thumb{background:#dcd6c9;border-radius:6px;
+  #panel::-webkit-scrollbar-thumb{background:#d2c8b4;border-radius:6px;
     border:3px solid var(--panel)}
-  #panel::-webkit-scrollbar-thumb:hover{background:#cec7b7}
+  #panel::-webkit-scrollbar-thumb:hover{background:#c2b69f}
 
   /* masthead — sticky so the title stays while the long panel scrolls */
+  /* A deep forest band gives the panel an identity and an anchor, instead of text
+     floating at the top of a page. It stays put while the long panel scrolls. */
   .masthead{
-    position:sticky;top:0;z-index:5;background:var(--panel);
-    padding:20px 0 14px;margin-bottom:2px;
-    border-bottom:1px solid var(--line-soft);
+    position:sticky;top:0;z-index:5;
+    background:linear-gradient(160deg,var(--forest) 0%,var(--forest-2) 100%);
+    margin:0 -22px;padding:19px 22px 16px;
+    box-shadow:0 1px 0 rgba(35,33,28,.10), 0 8px 18px -12px rgba(35,33,28,.45);
   }
-  .masthead::after{
-    content:'';position:absolute;left:0;right:0;bottom:-14px;height:14px;
-    background:linear-gradient(var(--panel),rgba(251,250,247,0));pointer-events:none;
-  }
-  h1{font-size:20px;margin:0;letter-spacing:-.021em;font-weight:650;line-height:1.2}
-  .masthead .rule{display:block;width:26px;height:2.5px;background:var(--accent);
-           border-radius:2px;margin:0 0 9px}
-  .sub{color:var(--muted);font-size:12px;margin:5px 0 0;line-height:1.5}
+  h1{font-size:20.5px;margin:0;letter-spacing:-.022em;font-weight:650;line-height:1.2;
+     color:var(--cream)}
+  .masthead .rule{display:block;width:28px;height:2.5px;
+     background:#9ec49f;border-radius:2px;margin:0 0 10px;opacity:.9}
+  .sub{color:rgba(244,239,227,.72);font-size:11.5px;margin:6px 0 0;line-height:1.5}
 
   h2{
     font-size:10.5px;text-transform:uppercase;letter-spacing:.10em;
@@ -73,10 +83,10 @@
     cursor:pointer;color:var(--ink-2);transition:background .13s,border-color .13s,
     color .13s,box-shadow .13s;
   }
-  .seg button:hover:not(.on){background:#f4f1ea;border-color:#d6d0c2}
+  .seg button:hover:not(.on){background:#fdfbf6;border-color:#cec3ac}
   .seg button.on{
-    background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600;
-    box-shadow:0 1px 3px rgba(26,25,23,.18);
+    background:var(--forest);border-color:var(--forest);color:var(--cream);
+    font-weight:600;box-shadow:0 1px 3px rgba(35,61,46,.30);
   }
   .seg button .acr{display:block;font-size:9px;letter-spacing:.12em;opacity:.6;
                    font-weight:600;margin-top:2px}
@@ -92,7 +102,7 @@
     border:1px solid var(--line);border-radius:var(--radius);
     background:var(--panel-2);color:inherit;cursor:pointer;
   }
-  select:hover{border-color:#d6d0c2}
+  select:hover{border-color:#cec3ac}
 
   .findrow{display:flex;gap:5px}
   .findrow input{
@@ -106,7 +116,7 @@
     border:1px solid var(--line);background:var(--panel-2);border-radius:var(--radius);
     cursor:pointer;color:var(--ink-2);transition:background .13s,border-color .13s;
   }
-  .findrow button:hover{background:#f4f1ea;border-color:#d6d0c2}
+  .findrow button:hover{background:#fdfbf6;border-color:#cec3ac}
   #findMe{font-size:15px;line-height:1;padding:8px 11px}
 
   /* ------------------------------------------------------------ year slider */
@@ -118,7 +128,7 @@
     width:32px;height:32px;flex:none;border:1px solid var(--line);
     background:var(--panel-2);border-radius:var(--radius);cursor:pointer;font-size:11px;
     color:var(--ink-2);transition:background .13s}
-  .play:hover{background:#f4f1ea}
+  .play:hover{background:#fdfbf6}
 
   /* ------------------------------------------------------------ colour ramp */
   .ramp{height:9px;border-radius:5px;margin:11px 0 5px;
@@ -136,12 +146,12 @@
   .empty{color:var(--faint);font-style:italic;font-size:13px}
 
   /* benchmark */
-  .bench{margin-top:12px;padding:11px 12px;background:var(--panel-2);
+  .bench{margin-top:12px;padding:12px 13px;background:var(--panel-2);
          border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
   .benchbar{position:relative;height:7px;border-radius:4px;
     background:linear-gradient(to right,#8c6b3d,#d6cca8,#71a044);
     box-shadow:inset 0 0 0 1px rgba(26,25,23,.10)}
-  .benchbar span{position:absolute;top:-4px;width:3px;height:15px;background:var(--ink);
+  .benchbar span{position:absolute;top:-4px;width:3px;height:15px;background:var(--forest);
     border-radius:2px;transform:translateX(-1.5px);
     box-shadow:0 0 0 2px var(--panel-2)}
   .benchtext{font-size:12px;color:var(--muted);margin-top:9px;line-height:1.5}
@@ -151,8 +161,8 @@
   .benchtext strong.mid{color:var(--ink)}
 
   /* worst year callout */
-  .worst{margin-top:12px;padding:10px 12px;background:#fdf7ee;
-         border:1px solid #e9dcc4;border-radius:var(--radius);
+  .worst{margin-top:12px;padding:10px 12px;background:#fbf3e3;
+         border:1px solid #e4d3b2;border-radius:var(--radius);
          font-size:12px;line-height:1.55;color:#6b5530}
   .worst strong{font-size:14.5px;color:var(--warn);letter-spacing:-.01em}
   .worstlink{display:block;opacity:.8;margin-top:3px}
@@ -177,7 +187,7 @@
     border-bottom:3.5px solid transparent;transition:transform .15s ease;opacity:.5}
   details[open]>summary::before{transform:rotate(90deg)}
   .dcount{margin-left:auto;font-weight:500;font-size:10.5px;color:var(--muted);
-    background:#efebe2;border-radius:10px;padding:2px 8px;min-width:22px;
+    background:#e5dcc9;border-radius:10px;padding:2px 8px;min-width:22px;
     text-align:center;letter-spacing:0}
   .dbody{padding:0 0 12px 12px}
   .dsub{border-top:1px solid var(--line-soft)}
@@ -198,7 +208,7 @@
   .chip{margin-top:13px}
   .chip img{width:100%;display:block;border-radius:var(--radius);
             border:1px solid var(--line);background:#ddd8cf;
-            transition:opacity .14s;box-shadow:var(--shadow)}
+            transition:opacity .14s;box-shadow:var(--shadow-lg)}
   .chipcap{font-size:10.5px;color:var(--muted);margin-top:5px;text-align:center;
            letter-spacing:.01em}
 
@@ -226,12 +236,20 @@
   .leaflet-control-layers{padding:4px 6px!important}
   .leaflet-tooltip{
     border:1px solid var(--line);border-radius:7px;box-shadow:var(--shadow);
-    font-size:12px;padding:5px 9px;color:var(--ink);background:rgba(255,255,255,.97)}
+    font-size:12px;padding:5px 9px;color:var(--ink);background:rgba(253,251,246,.97)}
   .leaflet-tooltip-top:before{border-top-color:var(--line)}
   .leaflet-control-attribution{
-    background:rgba(251,250,247,.88)!important;font-size:10px!important;
+    background:rgba(242,236,225,.90)!important;font-size:10px!important;
     border-radius:6px 0 0 0;padding:2px 7px!important;color:var(--muted)!important}
+  /* Warm the terrain tiles toward the parchment panel — Esri's hillshade is a cool
+     neutral grey and the flat valley floor reads as bare white next to the panel.
+     Scoped by class so satellite imagery keeps its true colour. */
+  .warmtile{filter:sepia(.20) saturate(.92) brightness(1.03) contrast(.97)}
   .findpin{filter:drop-shadow(0 1px 3px rgba(26,25,23,.35))}
+  /* Soft inner edge so the map reads as a surface rather than a bleed to the window. */
+  #map::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:400;
+    box-shadow:inset 0 0 60px rgba(83,70,47,.10)}
+  #map{position:relative}
 
   /* ------------------------------------------------------------- responsive */
   @media (max-width:820px){
@@ -765,7 +783,7 @@ function sparkline(s, key, im){
   const cx = ci<0 ? null : pad + (ci/Math.max(xs.length-1,1))*(w-2*pad);
   return `<div class="spark">
     <div class="sparkhead"><span>${im.label}</span><span>${lo.toFixed(2)} – ${hi.toFixed(2)}</span></div>
-    <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;background:#fff;border:1px solid var(--line);border-radius:5px">
+    <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;background:var(--panel-2);border:1px solid var(--line);border-radius:6px">
       ${cx!==null?`<line x1="${cx}" y1="0" x2="${cx}" y2="${h}" stroke="#c8c2b4" stroke-width="1"/>`:''}
       <polyline points="${pts}" fill="none" stroke="#33322e" stroke-width="1.6" stroke-linejoin="round"/>
     </svg></div>`;
@@ -941,29 +959,37 @@ async function init(){
   });
 
   map = L.map('map').setView([meta.center[1],meta.center[0]], meta.zoom);
-  // Carto's Positron is deliberately desaturated, so the brown-to-green data reads as
-  // the loudest thing on the page. OSM's default is too colourful to overlay on.
+  // Positron is designed to disappear, which reads as blank across a whole valley.
+  // Hillshade under a labels-only layer gives the map real form — you can see the
+  // Central Valley floor against the Coast Ranges, and why Salinas and Napa sit where
+  // they do — while the labels stay crisp and the field colours stay the loudest thing.
+  const hillshade = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}',
+    {maxZoom:19, className:'warmtile', attribution:'Hillshade &copy; Esri'});
+  const terrainTint = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}',
+    {maxZoom:13, opacity:0.55, className:'warmtile', attribution:''});
+  const labels = L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',
+    {maxZoom:19, subdomains:'abcd',
+     attribution:'&copy; OpenStreetMap contributors &copy; CARTO'});
+  const terrain = L.layerGroup([hillshade, terrainTint, labels]).addTo(map);
+
+  // Kept as the quiet alternative for anyone who finds terrain busy.
   const light = L.tileLayer(
     'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
     {maxZoom:19, subdomains:'abcd',
-     attribution:'&copy; OpenStreetMap contributors &copy; CARTO'}).addTo(map);
-
-  // More road and place detail, for finding your own ground.
-  const detailed = L.tileLayer(
-    'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    {maxZoom:19, subdomains:'abcd',
      attribution:'&copy; OpenStreetMap contributors &copy; CARTO'});
 
-  // Real imagery — at field zoom you can see the orchard rows themselves.
   const imagery = L.tileLayer(
     'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     {maxZoom:19, attribution:'Imagery &copy; Esri'});
-  const labels = L.tileLayer(
+  const satLabels = L.tileLayer(
     'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',
     {maxZoom:19, subdomains:'abcd', attribution:''});
-  const satellite = L.layerGroup([imagery, labels]);
+  const satellite = L.layerGroup([imagery, satLabels]);
 
-  L.control.layers({'Light':light,'Detailed':detailed,'Satellite':satellite},null,
+  L.control.layers({'Terrain':terrain,'Plain':light,'Satellite':satellite},null,
                  {collapsed:true,position:'bottomleft'}).addTo(map);
 
   // Basemap tiles are the one thing that cannot be bundled. If they are blocked —

@@ -1040,3 +1040,47 @@ reanalysis at 9 km resolves the valley cold-air pooling that sets those minima �
 Open-Meteo returned chill *rising* 2% in Napa and Fresno, contradicting the literature.
 gridMET at 4 km gives plausible values but takes 22 seconds per year per location.
 Left out rather than shipped wrong.
+
+## Find a place
+
+A search box that accepts either an address or bare coordinates, plus a button for the
+browser's own location.
+
+- **Coordinates** parse locally, no network. Accepts `38.44, -122.43`, space-separated,
+  and either order — in California latitude runs 32-42 and longitude -114 to -124, so a
+  reversed pair is unambiguous and gets swapped rather than rejected.
+- **Addresses** go to OpenStreetMap's Nominatim, bounded to a California viewbox so
+  "Salinas" lands in Monterey County rather than Puerto Rico.
+- **Use my location** calls the browser geolocation API.
+
+The result drops a pin, zooms to a distance-appropriate level, and selects the nearest
+sampled field — while **stating how far away it is**. That last part matters: this map
+samples fields, it is not a census, so a grower's own parcel usually is not in it.
+Silently selecting something 4 km away and presenting it as "their" field would be
+worse than saying nothing. Verified: searching Healdsburg lands 724 m from a field in
+the Healdsburg district; Fresno lands 1.4 km from one.
+
+Geolocation is refused by browsers on `file://` origins, which the standalone build
+hits. It detects that and says to type an address instead, rather than failing silently.
+
+Note for distribution: Nominatim is a free community service with a usage policy. At
+newsletter scale this is fine; if the map ever sees heavy traffic, the search should
+move to a keyed geocoder.
+
+## Visual pass
+
+Cosmetic only — no feature or interaction changes.
+
+- **Type and colour.** Warmed the neutrals so they sit with the brown-to-green data
+  ramp instead of fighting it; a deep green accent drawn from the healthy end of the
+  ramp. Tightened heading tracking, added tabular figures for all numbers so columns
+  align.
+- **Sticky masthead** with a small accent rule, so the title stays put while a long
+  panel scrolls. (The rule lives outside the `h1` — `init()` sets the title's
+  `textContent`, which would delete a child span on load.)
+- **Depth.** Soft shadows on the benchmark card, imagery and map chrome; hairline rules
+  between table rows instead of bare spacing.
+- **Controls.** Consistent radii, hover and focus-visible states throughout, wider
+  panel (392 px) for better line length.
+- **Leaflet chrome** restyled to match — rounded controls, softer tooltips, muted
+  attribution.

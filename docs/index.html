@@ -186,6 +186,7 @@ const RAMPS = {
 let map, layer, meta, series = {}, features = [], selected = null;
 let areas = [], areaSeries = {};
 let chips = {}, chipData = null, selectedFeature = null;
+let climate = {};
 let diversify = {};
 let state = { view:'fields', index:'ndvi', mode:'year', year:null, cohort:'all', county:'all' };
 let timer = null;
@@ -246,6 +247,50 @@ function benchmarkBlock(p){
         blocks in ${p.county} County on ${state.index.toUpperCase()}.${trendNote}
       </div>
     </div>`;
+}
+
+// Climate outlook. The satellite record is nine years; this is 1961-2099, from
+// Cal-Adapt's downscaled projections. The analog line is the useful part: naming a
+// place that already has the climate this one is heading for turns an abstract
+// temperature rise into something checkable against ground you can visit.
+function climateBlock(p){
+  // Fields carry district/county; grid cells carry `place`. Accept either.
+  const c = climate[p.district] || climate[p.county] || climate[p.place];
+  if(!c) return '';
+  const t = c.tmax;
+  const sign = v => (v > 0 ? '+' : '') + v.toFixed(1);
+
+  const analog = (a, when) => {
+    if(!a) return '';
+    if(a.warmer_than_any)
+      return `<p class="dnote"><strong>${when}</strong>, warmer than anywhere in this
+              study area is today — there is no local example to point to.</p>`;
+    return `<p class="dnote"><strong>${when}</strong>, this area's climate resembles
+            <strong>${a.place}</strong> as it is today (${a.their_today.toFixed(1)} °C).</p>`;
+  };
+
+  return `
+    <details class="dsec">
+      <summary><span>Climate outlook</span><span class="dcount">2099</span></summary>
+      <div class="dbody">
+        <div class="drow"><span class="dname">Average daily high, now</span>
+          <span class="dnum">${t.recent.toFixed(1)} °C</span></div>
+        <div class="drow"><span class="dname">Warmed since 1961–90</span>
+          <span class="dnum">${sign(t.warming_observed)} °C</span></div>
+        <div class="dhead">Projected<span>Cal-Adapt, 32-model ensemble</span></div>
+        <div class="drow"><span class="dname">By 2050, moderate emissions</span>
+          <span class="dnum">${sign(t.warming_mid_rcp45)} °C</span></div>
+        <div class="drow"><span class="dname">By 2050, high emissions</span>
+          <span class="dnum">${sign(t.warming_mid_rcp85)} °C</span></div>
+        <div class="drow"><span class="dname">By 2080, high emissions</span>
+          <span class="dnum">${sign(t.warming_late_rcp85)} °C</span></div>
+        ${analog(c.analog_2050_rcp85, 'By 2050')}
+        ${analog(c.analog_2080_rcp85, 'By 2080')}
+        <p class="dnote" style="margin-top:8px">
+          Temperature only. Water rights, soil, winter chill and markets decide what
+          actually grows, and none of them are in this projection.</p>
+      </div>
+    </details>`;
 }
 
 function diversifyBlock(cellId){
@@ -463,6 +508,7 @@ function selectArea(feature, lyr){
     <p style="font-size:11.5px;color:var(--muted);margin-top:8px">
       Cell values are medians of the sampled fields inside them, not a census of all
       farmland in the cell.</p>
+    ${climateBlock(p)}
     ${diversifyBlock(p.cell_id)}`;
 }
 
@@ -535,6 +581,7 @@ function select(feature, lyr){
       <tr><td>Analysis</td><td>${p.analysis || '—'}</td></tr>
       <tr><td>Years used</td><td>${p.first_year}–${p.last_year}</td></tr>
     </table>
+    ${climateBlock(p)}
     ${diversifyBlock(p.cell_id)}`;
 }
 
@@ -591,10 +638,10 @@ function setYear(y){
 async function init(){
   // When built as a standalone file the data is embedded, so the page works from
   // a file:// URL with no server. Served from a directory, it fetches instead.
-  const [m,g,s,a,as_,c,dv] = window.EMBEDDED
+  const [m,g,s,a,as_,c,dv,cl] = window.EMBEDDED
     ? [window.EMBEDDED.meta, window.EMBEDDED.fields, window.EMBEDDED.series,
        window.EMBEDDED.areas, window.EMBEDDED.areaSeries, window.EMBEDDED.chips,
-       window.EMBEDDED.diversify]
+       window.EMBEDDED.diversify, window.EMBEDDED.climate]
     : await Promise.all([
         fetch('data/meta.json').then(r=>r.json()),
         fetch('data/fields.geojson').then(r=>r.json()),
@@ -603,12 +650,14 @@ async function init(){
         fetch('data/area_series.json').then(r=>r.json()).catch(()=>({})),
         fetch('data/chips.json').then(r=>r.json()).catch(()=>({})),
         fetch('data/diversification.json').then(r=>r.json()).catch(()=>({})),
+        fetch('data/climate.json').then(r=>r.json()).catch(()=>({})),
       ]);
   areas = (a && a.features) ? a.features : [];
   areaSeries = as_ || {};
   chips = c || {};
   chipData = window.EMBEDDED ? (window.EMBEDDED.chipData || null) : null;
   diversify = dv || {};
+  climate = cl || {};
   meta = m; features = g.features; series = s;
   state.year = meta.years[meta.years.length-1];
 

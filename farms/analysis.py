@@ -53,17 +53,36 @@ def top_up(pool, per_group: int, seed: int, keep: set):
 
 def fetch_cohorts(sample: gpd.GeoDataFrame, client: PlanetStats,
                   start: str, end: str, workers: int = 8,
-                  interval: str = "P1M") -> pd.DataFrame:
-    jobs = [
-        {"field_id": r.field_id, "geometry": r.geometry,
-         "start": start, "end": end, "acres": r.acres, "interval": interval}
-        for r in sample.itertuples()
-    ]
+                  interval: str = "P1M",
+                  extra: tuple[str, str] | None = None) -> pd.DataFrame:
+    """Fetch the main record, and optionally a second, later window.
+
+    `extra` exists so the series can be brought up to date without discarding the
+    cache. The cache key includes the date range, so widening `end` from 2025 to 2026
+    would invalidate every field already fetched — about 20 PU each, for thousands of
+    fields. Requesting the extra year as its OWN range and concatenating costs about
+    1.8 PU per field instead, and every earlier response stays valid.
+    """
+    def build(a: str, b: str):
+        return [{"field_id": r.field_id, "geometry": r.geometry,
+                 "start": a, "end": b, "acres": r.acres, "interval": interval}
+                for r in sample.itertuples()]
+
     cohort_of = dict(zip(sample["field_id"], sample["cohort"]))
 
+    jobs = build(start, end)
     bar = tqdm(total=len(jobs), desc=f"fetching ({workers} at a time)")
     frames, errors = client.fetch_many(jobs, workers=workers, on_result=bar.update)
     bar.close()
+
+    if extra:
+        a, b = extra
+        later = build(a, b)
+        bar = tqdm(total=len(later), desc=f"extending to {b[:4]}")
+        more, more_errors = client.fetch_many(later, workers=workers, on_result=bar.update)
+        bar.close()
+        frames = frames + more
+        errors = errors + more_errors
 
     for field_id, message in errors[:10]:
         print(f"  {field_id}: {message[:110]}")
@@ -76,6 +95,9 @@ def fetch_cohorts(sample: gpd.GeoDataFrame, client: PlanetStats,
         df["cohort"] = cohort_of.get(field_id)
         out.append(df)
     return pd.concat(out, ignore_index=True) if out else pd.DataFrame()
+
+
+PARTIAL_YEAR: int | None = None      # set when the record is extended mid-season
 
 
 def annual(series: pd.DataFrame, min_obs: int = MIN_MONTHS_PER_YEAR) -> pd.DataFrame:
@@ -117,6 +139,11 @@ def field_trends(yearly: pd.DataFrame) -> pd.DataFrame:
     rows = []
     for (cohort, field_id), g in yearly.groupby(["cohort", "field_id"]):
         g = g.sort_values("year")
+        # A part-finished season has not necessarily reached its peak, so including it
+        # would drag every trend downward for reasons that have nothing to do with the
+        # crop. It still appears on the map's year slider — it just does not set trends.
+        if PARTIAL_YEAR is not None:
+            g = g[g["year"] != PARTIAL_YEAR]
         if len(g) < MIN_YEARS:
             continue
         years = g["year"].to_numpy(float)

@@ -31,6 +31,8 @@ from tqdm import tqdm
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import farms.analysis as _analysis  # noqa: E402
+from farms.analysis import fetch_cohorts as _fetch_cohorts  # noqa: E402
 from farms.indices import INDEX_NAMES  # noqa: E402
 from farms.planet import PlanetStats  # noqa: E402
 
@@ -239,6 +241,8 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--workers", type=int, default=8,
                     help="concurrent API requests")
+    ap.add_argument("--through", default=None,
+                    help="extend the record into a later year, e.g. 2026-08-31")
     args = ap.parse_args()
 
     fields = load_fields(args.county)
@@ -248,7 +252,11 @@ def main() -> None:
 
     client = PlanetStats()
     print(f"\nfetching {len(sample)} field series, 2017–2025…")
-    series = fetch(sample, client, args.workers)
+    extra = ("2026-01-01", args.through) if args.through else None
+    if extra:
+        _analysis.PARTIAL_YEAR = int(args.through[:4])
+    sample = sample.copy()
+    series = _fetch_cohorts(sample, client, START, END, args.workers, extra=extra)
     print(f"\n{client.summary()}")
 
     if series.empty:

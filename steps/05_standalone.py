@@ -38,6 +38,7 @@ def main() -> None:
         "areaSeries": load("area_series.json", {}),
         "chips": load("chips.json", {}),
         "diversify": load("diversification.json", {}),
+        "climate": load("climate.json", {}),
     }
 
     # Inline the imagery as data URIs. ~900 KB of JPEG becomes ~1.2 MB base64, which is

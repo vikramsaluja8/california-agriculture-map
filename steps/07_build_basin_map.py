@@ -189,6 +189,20 @@ def build_grid(fields: gpd.GeoDataFrame, annual: pd.DataFrame, trends: pd.DataFr
         out[f"{idx}_slope"] = out["cell_id"].map(agg[f"{idx}_slope"].median()).round(4)
         out[f"{idx}_mean"] = out["cell_id"].map(agg[f"{idx}_mean"].median()).round(3)
 
+    # Cells also carry the district (or county) most of their fields sit in, so the
+    # area panel can look up the same climate profile the field panel uses. Without it
+    # climateBlock silently finds nothing and the section just vanishes in area view.
+    place_of = fields.set_index("field_id").apply(
+        lambda r: r["district"] if pd.notna(r.get("district")) else r["county"], axis=1
+    ).to_dict()
+    cell_places = {}
+    for fid, cid in cell_of.items():
+        if cid in keep:
+            cell_places.setdefault(cid, []).append(place_of.get(fid))
+    out["place"] = out["cell_id"].map(
+        {c: (pd.Series(v).mode().iloc[0] if any(pd.notna(v)) else None)
+         for c, v in cell_places.items()})
+
     # Label each cell with the study region most of its fields sit in.
     region = fields.set_index("field_id")["hydro_region"].to_dict()
     reg_of_cell = {}

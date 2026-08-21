@@ -1,7 +1,7 @@
 {
   "title": "Farms on the Move",
-  "subtitle": "Butte, Colusa, Fresno, Glenn, Kern, Kings, Madera, Merced, Monterey, Napa, San Benito, San Joaquin, Sonoma, Stanislaus, Sutter, Tulare, Yolo \u00b7 crop transitions and field condition, 2017\u20132025",
-  "n_fields": 5148,
+  "subtitle": "Butte, Colusa, Fresno, Glenn, Kern, Kings, Madera, Merced, Monterey, Napa, San Benito, San Joaquin, Sonoma, Stanislaus, Sutter, Tulare, Yolo \u00b7 crop transitions and field condition, 2017\u20132026",
+  "n_fields": 5317,
   "years": [
     2017,
     2018,
@@ -11,7 +11,8 @@
     2022,
     2023,
     2024,
-    2025
+    2025,
+    2026
   ],
   "counties": [
     "Butte",
@@ -51,9 +52,9 @@
       "help": "How much healthy green canopy the field is carrying.",
       "scale": "good_bad",
       "scale_label": "less green \u2192 greener",
-      "value_min": 0.292,
-      "value_max": 0.909,
-      "slope_abs": 0.0427
+      "value_min": 0.288,
+      "value_max": 0.908,
+      "slope_abs": 0.0441
     },
     {
       "key": "ndmi",
@@ -62,8 +63,8 @@
       "scale": "good_bad",
       "scale_label": "drier plants \u2192 wetter plants",
       "value_min": -0.141,
-      "value_max": 0.289,
-      "slope_abs": 0.0346
+      "value_max": 0.296,
+      "slope_abs": 0.0358
     },
     {
       "key": "ndwi",
@@ -71,9 +72,9 @@
       "help": "Standing water on the ground \u2014 flooding, ponding, flood irrigation.",
       "scale": "dry_wet",
       "scale_label": "dry ground \u2192 standing water",
-      "value_min": -0.685,
-      "value_max": -0.303,
-      "slope_abs": 0.0328
+      "value_min": -0.691,
+      "value_max": -0.302,
+      "slope_abs": 0.0337
     }
   ],
   "cohorts": [
@@ -113,10 +114,10 @@
     "pistachio mature (pre-2012)"
   ],
   "grid_km": 12,
-  "n_cells": 305,
+  "n_cells": 309,
   "center": [
-    -121.14879923576689,
-    37.46337297130411
+    -121.11614169741641,
+    37.43532250929417
   ],
   "zoom": 8,
   "method": "Sentinel-2 L2A via Planet's Statistical API. For each month we take the clearest observation and read all three indices from that same scene. Growing season is March\u2013October; NDVI uses the season peak, NDMI and NDWI the season mean. Trends are Theil\u2013Sen slopes tested with Mann\u2013Kendall.",

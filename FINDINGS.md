@@ -957,3 +957,86 @@ roughly 103,000 — the whole increase would have overshot the target.
 
 Sample sizes now: 80 per cohort for the age-matched regions, 200 per wine district,
 70 per crop in Salinas, 65 in Yolo, 45 in southern Sutter.
+
+## Record extended through August 2026
+
+The satellite record now runs 2017 to **August 2026**. 5,511 of 5,530 sampled fields
+carry 2026; every county is at 98-100%.
+
+Fetched as its own date range rather than by widening the existing one. The cache key
+includes the range, so moving `end` from 2025 to 2026 would have invalidated every
+response already paid for — about 20 PU each across 5,300 fields. Requesting 2026
+separately and concatenating cost **~2.8 PU per field**, roughly seven times less.
+Total: **15,162 PU** across both passes.
+
+2026 appears on the year slider but is **excluded from trend fitting** — a season only
+run through August has not necessarily peaked, and including it would drag every trend
+down for reasons unrelated to the crop.
+
+## Climate outlook (step 10) — Cal-Adapt
+
+### Why not the obvious approach
+
+The first attempt used Open-Meteo, per 12 km grid cell, 36 years of daily data each.
+305 requests. It exhausted the free tier's daily quota without finishing, degrading to
+730 seconds per request. Two attempted fixes — deduplicating points, then coarsening
+the grid — treated a design problem as a tuning problem.
+
+The design was wrong in two ways. The question was asked at *region* level and answered
+at grid-cell level, roughly fifteen times more data than needed. And observed trends
+cannot answer "what may BECOME suitable" — extrapolating a 36-year line is not a
+projection.
+
+### What works
+
+**Cal-Adapt**, California's downscaled climate service: 6 km LOCA, 32-model ensemble,
+1950-2099, RCP4.5 and RCP8.5.
+
+| | Open-Meteo | Cal-Adapt |
+|---|---|---|
+| Per query | 4.6 s | **0.4 s** |
+| Rate limit | exhausted in ~15 requests | fine |
+| Record | 1990-2025 | 1950-**2099** |
+| Future scenarios | none | **two** |
+
+18 district points, complete in under 90 seconds.
+
+### Climate analogs instead of crop thresholds
+
+Published crop temperature requirements are contested and vary by cultivar, rootstock
+and management. Rather than assert them, the map asks a question the data answers on
+its own: **which district already has the climate this district is projected to have?**
+
+| District | Now | 2050 | 2080 | 2050 resembles |
+|---|---|---|---|---|
+| Napa Valley | 22.7 | 24.4 | 26.5 | San Joaquin today |
+| Healdsburg | 23.7 | 25.2 | 27.1 | Glenn today |
+| Sonoma Valley | 23.9 | 25.5 | 27.5 | Butte today |
+| Monterey | 24.1 | 25.6 | 27.7 | Merced today |
+| Fresno | 26.0 | 27.5 | 29.7 | Kern today |
+| **Kern** | 26.6 | 28.0 | 30.1 | **hotter than anywhere here today** |
+
+Mean annual daily maximum, degrees C, RCP8.5.
+
+Two things fall out. **Napa in 2050 has Stockton's climate today** — a concrete,
+checkable statement rather than an abstract temperature rise, and it points at ground a
+grower can go and look at. And **Kern runs off the top of the scale**: by 2050 the
+southern valley is warmer than anywhere currently farmed in the study area, so there is
+no local analog to learn from. That is a finding in itself.
+
+This closes the grant's goal 2 — identifying where conditions may become suitable —
+which was the last unmet commitment in the proposal.
+
+### Limits stated on the map
+
+Temperature only. Water rights, soil, winter chill and markets decide what actually
+grows, and none are in this projection. Scenario- and model-dependent by construction.
+
+### Chill hours, deliberately omitted
+
+Chill was the most valuable variable for a perennial-crop story and is not included.
+A 1 degree bias in daily minimum temperature moves accumulated chill by 22%, and no
+reanalysis at 9 km resolves the valley cold-air pooling that sets those minima —
+Open-Meteo returned chill *rising* 2% in Napa and Fresno, contradicting the literature.
+gridMET at 4 km gives plausible values but takes 22 seconds per year per location.
+Left out rather than shipped wrong.

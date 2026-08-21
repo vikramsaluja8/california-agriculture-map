@@ -21,6 +21,36 @@ MIN_YEARS = 6
 P_THRESHOLD = 0.05
 
 
+def existing_sample_ids(path) -> set:
+    """Field ids from a previous run of this step, if there is one.
+
+    Increasing a sample size normally REDRAWS it — pandas' sample(80) is not a superset
+    of sample(40) — which would re-fetch fields already paid for and cached. Seeding the
+    new draw with the old members makes growth additive: you pay only for the top-up.
+    """
+    import geopandas as _gpd
+    if not path.exists():
+        return set()
+    try:
+        return set(_gpd.read_file(path)["field_id"].astype(str))
+    except Exception:
+        return set()
+
+
+def top_up(pool, per_group: int, seed: int, keep: set):
+    """Take everything already sampled from this pool, then fill to `per_group`."""
+    have = pool[pool["field_id"].astype(str).isin(keep)]
+    if len(have) >= per_group:
+        return have.head(per_group)
+    rest = pool[~pool["field_id"].astype(str).isin(keep)]
+    need = per_group - len(have)
+    if len(rest) == 0:
+        return have
+    add = rest.sample(min(len(rest), need), random_state=seed)
+    import pandas as _pd
+    return _pd.concat([have, add])
+
+
 def fetch_cohorts(sample: gpd.GeoDataFrame, client: PlanetStats,
                   start: str, end: str, workers: int = 8,
                   interval: str = "P1M") -> pd.DataFrame:

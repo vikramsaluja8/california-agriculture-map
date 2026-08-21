@@ -34,7 +34,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from farms.analysis import annual, fetch_cohorts, field_trends  # noqa: E402
+from farms.analysis import (annual, existing_sample_ids, fetch_cohorts,  # noqa: E402
+                            field_trends, top_up)
 from farms.indices import INDEX_NAMES  # noqa: E402
 from farms.planet import PlanetStats  # noqa: E402
 
@@ -155,7 +156,7 @@ def cycles_per_year(series: pd.DataFrame) -> pd.DataFrame:
 
 def pick(fields: gpd.GeoDataFrame, per_crop: int, seed: int,
          min_acres: float, max_acres: float, min_acres_group: float,
-         max_crops: int | None = None) -> gpd.GeoDataFrame:
+         max_crops: int | None = None, keep: set | None = None) -> gpd.GeoDataFrame:
     sized = fields[(fields["acres"] >= min_acres) & (fields["acres"] <= max_acres)].copy()
     sized = sized[~sized["code_2023"].isin(NON_CROP)]
 
@@ -178,7 +179,7 @@ def pick(fields: gpd.GeoDataFrame, per_crop: int, seed: int,
                 break
             kept += 1
             sel = block[block["code_2023"] == code]
-            take = sel.sample(min(len(sel), per_crop), random_state=seed).copy()
+            take = top_up(sel, per_crop, seed, keep or set()).copy()
             take["cohort"] = name
             picked.append(take)
             print(f"    {name[:28]:<29} {len(take):>3} of {len(sel):>5,} fields "
@@ -294,8 +295,11 @@ def main() -> None:
     if floor is None:
         floor = 400.0 if args.cluster else MIN_COUNTY_ACRES
     print("\nsampling:")
+    prior = existing_sample_ids(PROCESSED / f"condition_{args.county.lower()}_fields.gpkg")
+    if prior:
+        print(f"  reusing {len(prior):,} already-fetched fields, topping up from there")
     sample = pick(fields, args.per_crop, args.seed, args.min_acres, args.max_acres,
-                  floor, args.max_crops)
+                  floor, args.max_crops, prior)
 
     client = PlanetStats()
     print(f"\nfetching {len(sample)} field series…")

@@ -34,7 +34,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from farms.analysis import annual, fetch_cohorts, field_trends  # noqa: E402
+from farms.analysis import (annual, existing_sample_ids, fetch_cohorts,  # noqa: E402
+                            field_trends, top_up)
 from farms.indices import INDEX_NAMES  # noqa: E402
 from farms.planet import PlanetStats  # noqa: E402
 
@@ -67,7 +68,7 @@ COMPARISONS = [
 
 
 def pick(fields: gpd.GeoDataFrame, per_cohort: int, seed: int,
-         min_acres: float, max_acres: float) -> gpd.GeoDataFrame:
+         min_acres: float, max_acres: float, keep: set | None = None) -> gpd.GeoDataFrame:
     fields = fields.copy()
     fields["planted"] = pd.to_numeric(fields["planted"], errors="coerce")
     sized = fields[(fields["acres"] >= min_acres) & (fields["acres"] <= max_acres)]
@@ -82,7 +83,7 @@ def pick(fields: gpd.GeoDataFrame, per_cohort: int, seed: int,
         if sel.empty:
             print(f"  {label:<30} none available — skipped")
             continue
-        take = sel.sample(min(len(sel), per_cohort), random_state=seed).copy()
+        take = top_up(sel, per_cohort, seed, keep or set()).copy()
         take["cohort"] = label
         picked.append(take)
         print(f"  {label:<30} {len(take):>3} of {len(sel):>4}   "
@@ -139,7 +140,10 @@ def main() -> None:
     path = PROCESSED / f"transitions_{args.county.lower()}_2016_2023.gpkg"
     fields = gpd.read_file(path)
     print(f"{len(fields):,} matched fields\n\ncohort sampling:")
-    sample = pick(fields, args.per_cohort, args.seed, args.min_acres, args.max_acres)
+    prior = existing_sample_ids(PROCESSED / f"agematch_{args.county.lower()}_fields.gpkg")
+    if prior:
+        print(f"  reusing {len(prior):,} already-fetched fields, topping up from there")
+    sample = pick(fields, args.per_cohort, args.seed, args.min_acres, args.max_acres, prior)
 
     client = PlanetStats()
     print(f"\nfetching {len(sample)} field series, {START[:4]}–{END[:4]}…")

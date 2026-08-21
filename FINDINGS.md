@@ -911,3 +911,49 @@ Rutherford, St. Helena, Calistoga — on a 22 km radius.
 Sample latitude runs 38.242 to 38.725, entirely south of Cloverdale.
 
 **3,307 fields · 17 counties · 5 regions · ~134,000 PU spent.**
+
+## Density increase
+
+Coverage deepened within the existing regions — no borders moved — targeting roughly
+half the monthly allowance.
+
+**5,148 fields**, up from 3,307. Usage went from 38% to **51.0%** of the 400,000
+PU/month allowance, leaving 195,840 PU.
+
+| Region | Before | After | Share |
+|---|---|---|---|
+| Sacramento Valley | 873 | 1,407 | 27% |
+| Tulare Lake Basin | 890 | 1,154 | 22% |
+| Salinas Valley | 489 | 972 | 19% |
+| San Joaquin Valley | 564 | 920 | 18% |
+| Napa / Sonoma wine country | 491 | 695 | 14% |
+| *north of Yuba City* | *172* | *172* | *3%* |
+
+North of Yuba City was deliberately held flat, so the earlier rebalance survives the
+density increase. Sacramento's growth is entirely in Yolo and southern Sutter.
+
+### Additive sampling — the change that made it affordable
+
+`df.sample(80)` is not a superset of `df.sample(40)`; pandas redraws. Growing every
+sample would therefore have re-fetched fields already paid for and cached, roughly
+doubling the cost of this step.
+
+Sampling is now **additive**: each run reads the previous sample's field ids, keeps
+them, and draws only the top-up. `farms.analysis.top_up()` and `existing_sample_ids()`.
+
+The effect is visible in the run logs — Fresno reused 250 cached fields and fetched 148:
+
+```
+Fresno      148 requests · 250 cached ·  5,555 PU
+Kings        34 requests · 113 cached ·  1,234 PU
+Tulare       73 requests · 162 cached ·  1,932 PU
+Kern        124 requests · 228 cached ·  3,791 PU
+Napa         46 requests · 154 cached ·  1,268 PU
+Sonoma      102 requests · 413 cached ·  3,979 PU
+```
+
+Adding 1,841 fields cost **53,783 PU**. Without additive sampling it would have cost
+roughly 103,000 — the whole increase would have overshot the target.
+
+Sample sizes now: 80 per cohort for the age-matched regions, 200 per wine district,
+70 per crop in Salinas, 65 in Yolo, 45 in southern Sutter.

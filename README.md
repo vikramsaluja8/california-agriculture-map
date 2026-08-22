@@ -10,7 +10,7 @@ An interactive map of how California farmland is changing — where crops are un
 stress, what growers are switching to, and what else could grow in a given district.
 Built for farmers to use, not for researchers to read.
 
-🗺️ **[Open the map](https://YOUR-USERNAME.github.io/California-Agriculture-Map/)**
+🗺️ **[Open the map](https://vikramsaluja8.github.io/california-agriculture-map/)**
 *(replace with your URL once GitHub Pages is enabled)*
 
 ---
